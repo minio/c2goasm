@@ -37,6 +37,9 @@ func DefineTable(constants, tableName string) (string, []Label) {
 			bytes = append(bytes, byte(v>>24))
 		} else if strings.Contains(line, ".quad") {
 			v, err := strconv.Atoi(strings.Fields(line)[1])
+			if err != nil {
+				panic(fmt.Sprintf("Atoi error for .quad: %v", err))
+			}
 			bytes = append(bytes, byte(v))
 			bytes = append(bytes, byte(v>>8))
 			bytes = append(bytes, byte(v>>16))
@@ -50,6 +53,17 @@ func DefineTable(constants, tableName string) (string, []Label) {
 			align := 1 << uint(bits)
 			for len(bytes)%align != 0 {
 				bytes = append(bytes, 0)
+			}
+		} else if strings.Contains(line, ".space") {
+			argument := strings.Fields(line)[1]
+			args := strings.Split(argument, ",")
+			length, _ := strconv.Atoi(args[0])
+			b := 0
+			if len(args) > 1 {
+				b, _ = strconv.Atoi(args[1])
+			}
+			for i := 0; i < length; i++ {
+				bytes = append(bytes, byte(b))
 			}
 		} else if strings.Contains(line, ".section") {
 			// ignore

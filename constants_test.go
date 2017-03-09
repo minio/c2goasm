@@ -137,4 +137,35 @@ GLOBL LCTABLE<>(SB), 8, $72`
 
 	testConstant(t, constant2, table2)
 
+	constant3 := `LCPI0_0:
+	.space	32,1
+LCPI0_1:
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2
+	.short	2                       ## 0x2`
+
+	table3 := `DATA LCTABLE<>+0x000(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x008(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x010(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x018(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x020(SB)/8, $0x0002000200020002
+DATA LCTABLE<>+0x028(SB)/8, $0x0002000200020002
+DATA LCTABLE<>+0x030(SB)/8, $0x0002000200020002
+DATA LCTABLE<>+0x038(SB)/8, $0x0002000200020002
+GLOBL LCTABLE<>(SB), 8, $64`
+
+	testConstant(t, constant3, table3)
 }

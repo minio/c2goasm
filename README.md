@@ -8,7 +8,7 @@ Chain of operation:
 ```
 $ cagac /path/to/c-project/build/SimdAvx2Detection.cpp.s SimdAvx2Detection_amd64.s
 $ asm2plan9s SimdAvx2Detection_amd64.s
-$ asmfmt SimdAvx2Detection_amd64.s
+$ asmfmt -w SimdAvx2Detection_amd64.s
 ```
 
 This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/ermig1979/Simd). However it should also work with other project and libraries.
@@ -63,3 +63,7 @@ $ make -n  SimdAvx2BgraToGray.s
 Additional arguments to aid in assembly generation
 ```
 ```
+
+## Tested compilers
+
+- clang on OSX

@@ -11,14 +11,12 @@ type Label struct {
 	Offset uint
 }
 
-func DefineTable(constants, tableName string) (string, []Label) {
-
-	lines := strings.Split(constants, "\n")
+func DefineTable(constants []string, tableName string) (string, []Label) {
 
 	labels := []Label{}
 	bytes := make([]byte, 0, 1000)
 
-	for _, line := range lines {
+	for _, line := range constants {
 
 		if strings.HasSuffix(line, ":") {
 			labels = append(labels, Label{Name: line[:len(line)-1], Offset: uint(len(bytes))})

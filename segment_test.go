@@ -1,14 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"strings"
 )
 
 func testSegment(t *testing.T, fullsrc []string, expected []Segment)  {
 	segments := SegmentSource(fullsrc)
-	fmt.Println(segments)
 	if !segmentEqual(segments, expected) {
 		t.Errorf("TestNames(): \nexpected %s\ngot      %s", expected, segments)
 	}
@@ -115,7 +113,7 @@ LBB0_15:                                ## %_ZN4Simd4Avx210BgraToGrayILb1EEEvPKh
 `
 
 	segments1 := []Segment{}
-	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 21, End: 90})
+	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 90})
 
 	testSegment(t, strings.Split(src1, "\n"), segments1)
 
@@ -281,9 +279,9 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 .subsections_via_symbols`
 
 	segments2 := []Segment{}
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 12, End: 35})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 54, End: 83})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 102, End: 152})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 35})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 55, End: 83})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 103, End: 152})
 
 	testSegment(t, strings.Split(src2, "\n"), segments2)
 

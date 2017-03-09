@@ -47,7 +47,7 @@ func SegmentSource(src []string) []Segment {
 				}
 			}
 
-			segments = append(segments, Segment{Name: entryName, Start: index})
+			segments = append(segments, Segment{Name: entryName, Start: index+1})
 		}
 
 		if strings.Contains(line, ".exit") {

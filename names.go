@@ -1,9 +1,9 @@
 package main
 
 import (
-	"unicode"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func extractPart(part string) (int, string) {
@@ -17,7 +17,7 @@ func extractPart(part string) (int, string) {
 		}
 	}
 	length, _ := strconv.Atoi(part[:digits])
-	return digits+length, part[digits:(digits+length)]
+	return digits + length, part[digits:(digits + length)]
 }
 
 func ExtractName(name string) string {
@@ -27,7 +27,7 @@ func ExtractName(name string) string {
 	for index, ch := range name {
 		if unicode.IsDigit(ch) {
 
-			for ; index < len(name); {
+			for index < len(name) {
 				size, part := extractPart(name[index:])
 				if size == 0 {
 					break

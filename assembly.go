@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"unicode"
+	"fmt"
 )
 
 func isLower(str string) bool {
@@ -18,6 +19,30 @@ func removeUndefined(line, undef string) string {
 	if parts := strings.SplitN(line, undef, 2); len(parts) > 1 {
 		line = parts[0] + strings.TrimSpace(parts[1])
 	}
+	return line
+}
+
+// fix Position Independent Labels
+func fixPicLabels(line string, table Table) string {
+
+	if strings.Contains(line, "[rip + ") {
+		parts := strings.SplitN(line, "[rip + ", 2)
+		label := parts[1][:len(parts[1])-1]
+
+		i := -1
+		var l Label
+		for i, l = range table.Labels {
+			if l.Name == label {
+				line = parts[0] + fmt.Sprintf("%d[rbp] /* [rip + %s */", l.Offset, parts[1])
+				fmt.Println("Found " + label + " at", l.Offset, "new", line)
+				break
+			}
+		}
+		if i == len(table.Labels) {
+			panic(fmt.Sprintf("Failed to find label to replace of position independent code: %s", label))
+		}
+	}
+
 	return line
 }
 
@@ -60,13 +85,14 @@ func assemblify(lines []string, table Table) ([]string, error) {
 		line = removeUndefined(line, "xmmword")
 		line = removeUndefined(line, "ymmword")
 
+		line = fixPicLabels(line, table)
+
 		// TODO
 		// shr/sar without arg --> add , 1
 		// replace PIC load ([rip] based)
 		// strip header
 		// strip footer
 		// add golang header
-		// add golang footer
 		// consistent use of rbp & rsp
 		result = append(result, line)
 	}

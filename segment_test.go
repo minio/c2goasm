@@ -113,7 +113,7 @@ LBB0_15:                                ## %_ZN4Simd4Avx210BgraToGrayILb1EEEvPKh
 `
 
 	segments1 := []Segment{}
-	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 90})
+	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 91})
 
 	testSegment(t, strings.Split(src1, "\n"), segments1)
 
@@ -279,9 +279,9 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 .subsections_via_symbols`
 
 	segments2 := []Segment{}
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 35})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 55, End: 83})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 103, End: 152})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 36})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 55, End: 84})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 103, End: 153})
 
 	testSegment(t, strings.Split(src2, "\n"), segments2)
 

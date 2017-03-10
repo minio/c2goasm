@@ -65,11 +65,11 @@ func assemblify(lines []string, table Table) ([]string, error) {
 		}
 
 		// Make jmps uppercase
-		if parts := strings.SplitN(line, `LBB0`, 2); len(parts) > 1 {
+		if parts := strings.SplitN(line, `LBB`, 2); len(parts) > 1 {
 			// unless it is a label
 			if !strings.Contains(parts[1], ":") {
 				// make jmp statement uppercase
-				line = strings.ToUpper(parts[0]) + "LBB0" + parts[1]
+				line = strings.ToUpper(parts[0]) + "LBB" + parts[1]
 			}
 		}
 

@@ -66,10 +66,12 @@ func fixShifts(line string) string {
 	return line
 }
 
-func assemblify(lines []string, table Table) ([]string, error) {
+func assemblify(lines []string, table Table, stack Stack) ([]string, error) {
 
 	var result []string
 
+	eatHeader := true
+	var goasm []string
 	for _, line := range lines {
 
 		// Remove ## comments
@@ -78,6 +80,23 @@ func assemblify(lines []string, table Table) ([]string, error) {
 				continue
 			}
 			line = parts[0]
+		}
+
+		if eatHeader {
+
+			if b, asm := stack.IsStdCallHeader(line); b {
+				fmt.Println("SKIPPING:", line)
+				if asm != "" {
+					goasm = append(goasm, asm)
+				}
+				continue
+			} else {
+				// Output equivalent asm instructions for golang
+				result = append(result, goasm...)
+
+				// And we are done with removing the std call header
+				eatHeader = false
+			}
 		}
 
 		// Skip lines with aligns

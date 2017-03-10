@@ -61,23 +61,52 @@ func ExtractStackInfo(postamble []string) Stack {
 	return stack
 }
 
-func (s *Stack) CreateGoPreable() []string {
+func (s *Stack) IsStdCallHeader(line string) (bool, string) {
 
-	var result []string
-
-	if s.FixedSize != 0 {
-		result = append(result, fmt.Sprintf("    SUB $%s, SP", s.FixedSize))
+	if strings.Contains(line, "push") {
+		parts := strings.SplitN(line, "push", 2)
+		fmt.Println("push:", parts[1])
+		return true, ""
+	} else if strings.Contains(line, "mov") {
+		parts := strings.SplitN(line, "mov", 2)
+		argument := parts[1]
+		args := strings.SplitN(argument, ",", 2)
+		if strings.TrimSpace(args[0]) == "rbp" && strings.TrimSpace(args[1]) == "rsp" {
+			if s.SetRbp {
+				return true, ""
+			} else {
+				panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
+			}
+		} else {
+			return false, ""
+		}
+	} else if strings.Contains(line, "sub") {
+		parts := strings.SplitN(line, "sub", 2)
+		argument := parts[1]
+		args := strings.SplitN(argument, ",", 2)
+		if strings.TrimSpace(args[0]) == "rsp" {
+			space, _ := strconv.Atoi(strings.TrimSpace(args[1]))
+			if s.FixedSize != 0 && s.FixedSize == space {
+				return true, fmt.Sprintf("    SUB $%d, SP", s.FixedSize)
+			} else {
+				panic(fmt.Sprintf("'sub rsp' found but not for fixed stack size: %s", line))
+			}
+		} else {
+			return false, ""
+		}
+	} else {
+		panic(fmt.Sprintf("Unknown line for IsHeader: %s", line))
 	}
 
-	return result
+	return false, ""
 }
 
-func (s *Stack) CreateGoPostable() []string {
+func (s *Stack) Return() []string {
 
 	var result []string
 
 	if s.FixedSize != 0 {
-		result = append(result, fmt.Sprintf("    ADD $%s, SP", s.FixedSize))
+		result = append(result, fmt.Sprintf("    ADD $%d, SP", s.FixedSize))
 	}
 	if s.VZeroUpper {
 		result = append(result, "    VZEROUPPER")

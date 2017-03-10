@@ -64,26 +64,23 @@ func process(lines []string) ([]string, error) {
 			result = append(result, "")
 		}
 
-		// Define function
-		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0", s.Name))
-		result = append(result, "")
+		// Define subroutine
+		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", s.Name))
 
 		result = append(result, InsertArguments()...)
 
-		assembly, err := assemblify(lines[s.Start+3:s.End], table)
+		assembly, err := assemblify(lines[s.Start:s.End], table, s.stack)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}
 		result = append(result, assembly...)
 
-		// Exit out of function
-		result = append(result, fmt.Sprintf("    VZEROUPPER"))
-		result = append(result, fmt.Sprintf("    RET"))
+		// Return from subroutine
+		result = append(result, s.stack.Return()...)
 
 		if isegment < len(segments)-1 {
-			// Empty lines before next function
-			result = append(result, "")
-			result = append(result, "")
+			// Empty lines before next subroutine
+			result = append(result, "\n", "\n")
 		}
 	}
 

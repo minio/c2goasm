@@ -64,7 +64,7 @@ func SegmentSource(src []string) []Segment {
 				panic(fmt.Sprintf("No entry name found for exit %s", exitName))
 			}
 
-			segments[isegment].End = index
+			segments[isegment].End = index + 1 // include this line (label)
 		}
 	}
 

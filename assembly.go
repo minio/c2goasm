@@ -45,6 +45,28 @@ func fixPicLabels(line string, table Table) string {
 	return line
 }
 
+func fixShiftNoArgument(line, ins string) string {
+
+	if strings.Contains(line, ins) {
+		parts := strings.SplitN(line, ins, 2)
+		args := strings.SplitN(parts[1], ",", 2)
+		if len(args) == 1 {
+			line += ", 1"
+		}
+	}
+
+	return line
+}
+
+func fixShifts(line string) string {
+
+	line = fixShiftNoArgument(line, "shr")
+	line = fixShiftNoArgument(line, "sar")
+
+	return line
+}
+
+
 func assemblify(lines []string, table Table) ([]string, error) {
 
 	var result []string
@@ -84,10 +106,10 @@ func assemblify(lines []string, table Table) ([]string, error) {
 		line = removeUndefined(line, "xmmword")
 		line = removeUndefined(line, "ymmword")
 
+		line = fixShifts(line)
 		line = fixPicLabels(line, table)
 
 		// TODO
-		// shr/sar without arg --> add , 1
 		// strip header
 		// add golang header
 		// consistent use of rbp & rsp

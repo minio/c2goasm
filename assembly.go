@@ -21,7 +21,7 @@ func removeUndefined(line, undef string) string {
 	return line
 }
 
-func assemblify(lines []string) ([]string, error) {
+func assemblify(lines []string, table Table) ([]string, error) {
 
 	var result []string
 
@@ -62,7 +62,6 @@ func assemblify(lines []string) ([]string, error) {
 
 		// TODO
 		// shr/sar without arg --> add , 1
-		// create constants table
 		// replace PIC load ([rip] based)
 		// strip header
 		// strip footer

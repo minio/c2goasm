@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 // readLines reads a whole file into memory
@@ -46,18 +47,33 @@ func process(lines []string) ([]string, error) {
 
 	// Get one segment per function
 	segments := SegmentSource(lines)
-	fmt.Println(segments)
+	tables := SegmentConsts(lines)
 
 	var result []string
 
 	// Iterate over all functions
 	for isegment, s := range segments {
 
+		// Check for constants table
+		itable := -1
+		if itable = GetCorrespondingTable(s, tables); itable != -1 {
+
+			// Output constants table
+			result = append(result, strings.Split(tables[itable].Data, "\n")...)
+
+			result = append(result, "")
+		}
+
 		// Define function
 		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0", s.Name))
 		result = append(result, "")
-		
-		assembly, err := assemblify(lines[s.Start:(s.End-s.Start)])
+
+		var table Table
+		if itable != -1 {
+			table = tables[itable]
+		}
+
+		assembly, err := assemblify(lines[s.Start:(s.End-s.Start)], table)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}
@@ -67,7 +83,9 @@ func process(lines []string) ([]string, error) {
 		result = append(result, fmt.Sprintf("    VZEROUPPER"))
 		result = append(result, fmt.Sprintf("    RET"))
 
+
 		if isegment < len(segments) - 1 {
+			// Empty lines before next function
 			result = append(result, "")
 			result = append(result, "")
 		}

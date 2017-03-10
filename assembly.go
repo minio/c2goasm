@@ -34,7 +34,6 @@ func fixPicLabels(line string, table Table) string {
 		for i, l = range table.Labels {
 			if l.Name == label {
 				line = parts[0] + fmt.Sprintf("%d[rbp] /* [rip + %s */", l.Offset, parts[1])
-				fmt.Println("Found " + label + " at", l.Offset, "new", line)
 				break
 			}
 		}
@@ -89,9 +88,7 @@ func assemblify(lines []string, table Table) ([]string, error) {
 
 		// TODO
 		// shr/sar without arg --> add , 1
-		// replace PIC load ([rip] based)
 		// strip header
-		// strip footer
 		// add golang header
 		// consistent use of rbp & rsp
 		result = append(result, line)

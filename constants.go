@@ -6,12 +6,17 @@ import (
 	"strings"
 )
 
+type Table struct {
+	Data   string
+	Labels []Label
+}
+
 type Label struct {
 	Name   string
 	Offset uint
 }
 
-func DefineTable(constants []string, tableName string) (string, []Label) {
+func DefineTable(constants []string, tableName string) Table {
 
 	labels := []Label{}
 	bytes := make([]byte, 0, 1000)
@@ -87,8 +92,34 @@ func DefineTable(constants []string, tableName string) (string, []Label) {
 	}
 	table = append(table, fmt.Sprintf("GLOBL %s<>(SB), 8, $%d", tableName, len(bytes)))
 
-	//fmt.Println(strings.Join(table, "\n"))
-	//fmt.Println(labels)
+	return Table{Data: strings.Join(table, "\n"), Labels: labels}
+}
 
-	return strings.Join(table, "\n"), labels
+func SegmentConsts(lines []string) []Table {
+
+	consts := []Segment{}
+
+	searchNextSection := false
+	for index, line := range lines {
+
+		if strings.Contains(line, "__const") {
+
+			searchNextSection = true
+			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: index+1})
+
+		} else if searchNextSection && strings.Contains(line, ".section") && strings.Contains(line, "instructions") {
+
+			searchNextSection = false
+
+			consts[len(consts)-1].End = index
+		}
+	}
+
+	tables := []Table{}
+
+	for _, c := range consts {
+		tables = append(tables, DefineTable(lines[c.Start:c.End], c.Name))
+	}
+
+	return tables
 }

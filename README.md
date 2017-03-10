@@ -48,7 +48,7 @@ Go code
 Caveats
 - No `call` statements (i.e. inline your C code)
 
-## Generate C assembly
+## Generate assembly from C/C++
 
 See list of assembly targets
 ```

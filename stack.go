@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type Stack struct {
-	Pushes []string
-	SetRbp bool
-	FixedSize int
+	Pushes      []string
+	SetRbp      bool
+	FixedSize   int
 	DynamicSize bool
+	VZeroUpper  bool
 }
 
 func ExtractStackInfo(postamble []string) Stack {
@@ -48,6 +49,10 @@ func ExtractStackInfo(postamble []string) Stack {
 			} else {
 				panic(fmt.Sprintf("Unexpected add statement for postamble: %s", line))
 			}
+		} else if strings.Contains(line, "vzeroupper") {
+			stack.VZeroUpper = true
+		} else if strings.Contains(line, "ret") {
+			// no action to take
 		} else {
 			panic(fmt.Sprintf("Unknown line for postamble: %s", line))
 		}
@@ -56,3 +61,28 @@ func ExtractStackInfo(postamble []string) Stack {
 	return stack
 }
 
+func (s *Stack) CreateGoPreable() []string {
+
+	var result []string
+
+	if s.FixedSize != 0 {
+		result = append(result, fmt.Sprintf("    SUB $%s, SP", s.FixedSize))
+	}
+
+	return result
+}
+
+func (s *Stack) CreateGoPostable() []string {
+
+	var result []string
+
+	if s.FixedSize != 0 {
+		result = append(result, fmt.Sprintf("    ADD $%s, SP", s.FixedSize))
+	}
+	if s.VZeroUpper {
+		result = append(result, "    VZEROUPPER")
+	}
+	result = append(result, "    RET")
+
+	return result
+}

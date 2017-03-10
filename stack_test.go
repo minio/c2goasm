@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"testing"
 	"strings"
+	"testing"
 )
-
 
 func testStack(t *testing.T, postamble string, expected Stack) {
 	preample := ExtractStackInfo(strings.Split(postamble, "\n"))
@@ -21,10 +20,12 @@ func TestStacks(t *testing.T) {
 
 	//   push    rbp
 	//   mov     rbp, rsp
-	preamble1 := Stack{SetRbp: true}
+	preamble1 := Stack{SetRbp: true, VZeroUpper: true}
 	preamble1.Pushes = append(preamble1.Pushes, "rbp")
 
-	postamble1 := `	    pop     rbp`
+	postamble1 := `	    pop     rbp
+	    vzeroupper
+	    ret`
 
 	testStack(t, postamble1, preamble1)
 
@@ -91,15 +92,15 @@ func TestStacks(t *testing.T) {
 	testStack(t, postamble4, preamble4)
 
 	//   push    rbp
-    //   mov     rbp, rsp
-    //   push    r15
+	//   mov     rbp, rsp
+	//   push    r15
 	//   push    r14
 	//   push    r13
 	//   push    r12
 	//   push    rbx
 	//   and     rsp, -32
 	//   sub     rsp, 192`
-	preamble5 := Stack{SetRbp: true, DynamicSize: true}
+	preamble5 := Stack{SetRbp: true, DynamicSize: true, VZeroUpper: true}
 	preamble5.Pushes = append(preamble5.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	postamble5 := `        lea     rsp, [rbp - 40]
@@ -108,7 +109,9 @@ func TestStacks(t *testing.T) {
         pop     r13
         pop     r14
         pop     r15
-        pop     rbp`
+        pop     rbp
+        vzeroupper
+        ret`
 
 	testStack(t, postamble5, preamble5)
 }

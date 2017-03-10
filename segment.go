@@ -6,18 +6,19 @@ import (
 )
 
 type Segment struct {
-	Name string
+	Name       string
 	Start, End int
+	stack      Stack
 }
 
 func segmentEqual(a, b []Segment) bool {
 
 	if a == nil && b == nil {
-		return true;
+		return true
 	}
 
 	if a == nil || b == nil {
-		return false;
+		return false
 	}
 
 	if len(a) != len(b) {
@@ -47,7 +48,7 @@ func SegmentSource(src []string) []Segment {
 				}
 			}
 
-			segments = append(segments, Segment{Name: entryName, Start: index+1})
+			segments = append(segments, Segment{Name: entryName, Start: index + 1})
 		}
 
 		if strings.Contains(line, ".exit") {

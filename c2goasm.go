@@ -68,7 +68,9 @@ func process(lines []string) ([]string, error) {
 		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0", s.Name))
 		result = append(result, "")
 
-		assembly, err := assemblify(lines[s.Start:s.End], table)
+		result = append(result, InsertArguments()...)
+
+		assembly, err := assemblify(lines[s.Start+3:s.End], table)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}
@@ -78,8 +80,7 @@ func process(lines []string) ([]string, error) {
 		result = append(result, fmt.Sprintf("    VZEROUPPER"))
 		result = append(result, fmt.Sprintf("    RET"))
 
-
-		if isegment < len(segments) - 1 {
+		if isegment < len(segments)-1 {
 			// Empty lines before next function
 			result = append(result, "")
 			result = append(result, "")

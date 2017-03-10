@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
-	"fmt"
 )
 
 func isLower(str string) bool {
@@ -66,7 +66,6 @@ func fixShifts(line string) string {
 	return line
 }
 
-
 func assemblify(lines []string, table Table) ([]string, error) {
 
 	var result []string
@@ -118,4 +117,3 @@ func assemblify(lines []string, table Table) ([]string, error) {
 
 	return result, nil
 }
-

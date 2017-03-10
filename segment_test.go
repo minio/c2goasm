@@ -1,11 +1,11 @@
 package main
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
 
-func testSegment(t *testing.T, fullsrc []string, expected []Segment)  {
+func testSegment(t *testing.T, fullsrc []string, expected []Segment) {
 	segments := SegmentSource(fullsrc)
 	if !segmentEqual(segments, expected) {
 		t.Errorf("TestNames(): \nexpected %s\ngot      %s", expected, segments)

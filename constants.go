@@ -123,3 +123,17 @@ func SegmentConsts(lines []string) []Table {
 
 	return tables
 }
+
+func GetCorrespondingTable(lines []string, tables []Table) Table {
+
+	concat := strings.Join(lines, "\n")
+
+	for _, t := range tables {
+		// Easy test -- we assume that if we find one label, we would find the others as well...
+		if strings.Contains(concat, t.Labels[0].Name) {
+			return t
+		}
+	}
+
+	return Table{}
+}

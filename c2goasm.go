@@ -55,11 +55,11 @@ func process(lines []string) ([]string, error) {
 	for isegment, s := range segments {
 
 		// Check for constants table
-		itable := -1
-		if itable = GetCorrespondingTable(s, tables); itable != -1 {
+		var table Table
+		if table = GetCorrespondingTable(lines[s.Start:s.End], tables); len(table.Labels) > 0 {
 
 			// Output constants table
-			result = append(result, strings.Split(tables[itable].Data, "\n")...)
+			result = append(result, strings.Split(table.Data, "\n")...)
 
 			result = append(result, "")
 		}
@@ -68,12 +68,7 @@ func process(lines []string) ([]string, error) {
 		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0", s.Name))
 		result = append(result, "")
 
-		var table Table
-		if itable != -1 {
-			table = tables[itable]
-		}
-
-		assembly, err := assemblify(lines[s.Start:(s.End-s.Start)], table)
+		assembly, err := assemblify(lines[s.Start:s.End], table)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}

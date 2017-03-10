@@ -37,8 +37,12 @@ LCPI0_3:
 	.align	4, 0x90
 __ZN4Simd4Avx210BgraToGrayEPKhmmmPhm:   ## @_ZN4Simd4Avx210BgraToGrayEPKhmmmPhm
 ## BB#0:
-	push	rbp
-	jne	LBB0_9
+	push    rbp
+	mov     rbp, rsp
+	mov     rax, rdi
+	and     rax, -32
+	cmp     rax, rdi
+	jne     LBB0_9
 ## BB#1:
 	mov	r10, r9
 	jne	LBB0_9
@@ -113,7 +117,7 @@ LBB0_15:                                ## %_ZN4Simd4Avx210BgraToGrayILb1EEEvPKh
 `
 
 	segments1 := []Segment{}
-	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 91})
+	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 95})
 
 	testSegment(t, strings.Split(src1, "\n"), segments1)
 
@@ -131,10 +135,25 @@ LCPI0_0:
 	.align	4, 0x90
 __ZN4Simd4Avx213Yuv444pToBgraEPKhmS2_mS2_mmmPhmh: ## @_ZN4Simd4Avx213Yuv444pToBgraEPKhmS2_mS2_mmmPhmh
 ## BB#0:
-	push	rbp
-	mov	rbp, rsp
-	jne	LBB0_14
-## BB#1:
+	push    rbp
+	mov     rbp, rsp
+	push    r15
+	push    r14
+	push    r13
+	push    r12
+	push    rbx
+	and     rsp, -32
+	sub     rsp, 192
+	mov     qword ptr [rsp + 56], r9 ## 8-byte Spill
+	mov     r9b, byte ptr [rbp + 48]
+	mov     r15, qword ptr [rbp + 40]
+	mov     r13, qword ptr [rbp + 32]
+	mov     r10, qword ptr [rbp + 16]
+	mov     rbx, rsi
+	and     rbx, -32
+	cmp     rbx, rsi
+	jne     LBB0_14
+### BB#1:
 	mov	rbx, rdi
 	cmp	rbx, r13
 	jne	LBB0_14
@@ -155,6 +174,10 @@ LBB0_17:                                ## %._crit_edge.i
 LBB0_20:                                ## %_ZN4Simd4Avx213Yuv444pToBgraILb1EEEvPKhmS3_mS3_mmmPhmh.exit
 	lea	rsp, [rbp - 40]
 	pop	rbx
+	pop     r12
+	pop     r13
+	pop     r14
+	pop     r15
 	pop	rbp
 	vzeroupper
 	ret
@@ -176,6 +199,14 @@ __ZN4Simd4Avx213Yuv420pToBgraEPKhmS2_mS2_mmmPhmh: ## @_ZN4Simd4Avx213Yuv420pToBg
 	push	rbp
 	mov	rbp, rsp
 	push	r15
+	push    r14
+	push    r13
+	push    r12
+	push    rbx
+	and     rsp, -32
+	sub     rsp, 864
+	mov     qword ptr [rsp + 144], r9 ## 8-byte Spill
+	mov     qword ptr [rsp + 152], rcx ## 8-byte Spill
 	xor	r12d, r12d
 	.align	4, 0x90
 LBB1_12:                                ## %.lr.ph.i.18
@@ -203,6 +234,10 @@ LBB1_21:                                ##   in Loop: Header=BB1_18 Depth=1
 LBB1_22:                                ## %_ZN4Simd4Avx213Yuv420pToBgraILb1EEEvPKhmS3_mS3_mmmPhmh.exit
 	lea	rsp, [rbp - 40]
 	pop	rbx
+	pop     r12
+	pop     r13
+	pop     r14
+	pop     r15
 	pop	rbp
 	vzeroupper
 	ret
@@ -222,6 +257,20 @@ LCPI2_12:
 __ZN4Simd4Avx213Yuv422pToBgraEPKhmS2_mS2_mmmPhmh: ## @_ZN4Simd4Avx213Yuv422pToBgraEPKhmS2_mS2_mmmPhmh
 ## BB#0:
 	push	rbp
+	mov     rbp, rsp
+	push    r15
+	push    r14
+	push    r13
+	push    r12
+	push    rbx
+	and     rsp, -32
+	sub     rsp, 416
+	mov     qword ptr [rsp + 184], rcx ## 8-byte Spill
+	mov     qword ptr [rsp + 176], rsi ## 8-byte Spill
+	mov     cl, byte ptr [rbp + 48]
+	mov     r12, qword ptr [rbp + 40]
+	mov     rax, qword ptr [rbp + 32]
+	mov     r10, qword ptr [rbp + 16]
 	jne	LBB2_14
 ## BB#1:
 	mov	rsi, rdi
@@ -272,6 +321,10 @@ LBB2_19:                                ##   in Loop: Header=BB2_16 Depth=1
 LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEvPKhmS3_mS3_mmmPhmh.exit
 	lea	rsp, [rbp - 40]
 	pop	rbx
+	pop     r12
+	pop     r13
+	pop     r14
+	pop     r15
 	pop	rbp
 	vzeroupper
 	ret
@@ -279,9 +332,9 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 .subsections_via_symbols`
 
 	segments2 := []Segment{}
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 36})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 55, End: 84})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 103, End: 153})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 51})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 74, End: 111})
+	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 134, End: 198})
 
 	testSegment(t, strings.Split(src2, "\n"), segments2)
 

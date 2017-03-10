@@ -26,7 +26,7 @@ func segmentEqual(a, b []Segment) bool {
 	}
 
 	for i := range a {
-		if a[i] != b[i] {
+		if !(a[i].Name == b[i].Name && a[i].Start == b[i].Start && a[i].End == b[i].End) {
 			return false
 		}
 	}
@@ -38,7 +38,11 @@ func SegmentSource(src []string) []Segment {
 
 	segments := []Segment{}
 
+	gatherUntilRetForSegment := -1
+
 	for index, line := range src {
+
+		// Find start of a subroutine
 		if strings.Contains(line, "## @") {
 			entryName := ExtractName(strings.Split(line, "## @")[1])
 
@@ -51,6 +55,7 @@ func SegmentSource(src []string) []Segment {
 			segments = append(segments, Segment{Name: entryName, Start: index + 1})
 		}
 
+		// Find end of a subroutine
 		if strings.Contains(line, ".exit") {
 			exitName := ExtractName(strings.Split(line, "## %")[1])
 
@@ -66,6 +71,21 @@ func SegmentSource(src []string) []Segment {
 			}
 
 			segments[isegment].End = index + 1 // include this line (label)
+
+			// Gather stack information
+			gatherUntilRetForSegment = isegment
+		}
+
+		if gatherUntilRetForSegment != -1 {
+			if strings.Contains(line, "ret") {
+
+				// Lines of postamble
+				stackLines := src[segments[gatherUntilRetForSegment].End:index+1]
+
+				segments[gatherUntilRetForSegment].stack = ExtractStackInfo(stackLines)
+
+				gatherUntilRetForSegment = -1
+			}
 		}
 	}
 

@@ -29,12 +29,30 @@ $ c2goasm /path/to/c-project/build/SomeGreatCode.cpp.s SomeGreatCode_amd64.s
 
 Here is a simple example.
 
-C code
+C source using intrinsics
 ```
+void MultiplyAndAdd(float* arg1, float* arg2, float* arg3, float* result) {
+    __m256 vec1 = _mm256_load_ps(arg1);
+    __m256 vec2 = _mm256_load_ps(arg2);
+    __m256 vec3 = _mm256_load_ps(arg3);
+    __m256 res  = _mm256_fmadd_ps(vec1, vec2, vec3);
+    Store<true>((__m256i*)(result), res);
+}
 ```
 
-C assembly
+Generated assembly
 ```
+__ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
+## BB#0:
+        push          rbp
+        mov           rbp, rsp
+        vmovups       ymm0, ymmword ptr [rdi]
+        vmovups       ymm1, ymmword ptr [rsi]
+        vfmadd213ps   ymm1, ymm0, ymmword ptr [rdx]
+        vmovups       ymmword ptr [rcx], ymm1
+        pop           rbp
+        vzeroupper
+        ret
 ```
 
 Go assembly

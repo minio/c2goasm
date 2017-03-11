@@ -11,6 +11,12 @@ type Segment struct {
 	stack      Stack
 }
 
+type Exit struct {
+	Name  string
+	End   int
+	stack Stack
+}
+
 func segmentEqual(a, b []Segment) bool {
 
 	if a == nil && b == nil {
@@ -36,13 +42,46 @@ func segmentEqual(a, b []Segment) bool {
 
 func SegmentSource(src []string) []Segment {
 
-	segments := []Segment{}
+	exits := []Exit{}
 
-	gatherUntilRetForSegment := -1
+	exitGatherUntilRet := -1
 
+	// Collect exit of subroutines
 	for index, line := range src {
 
-		// Find start of a subroutine
+		if strings.Contains(line, ".exit") {
+			exitName := ExtractName(strings.Split(line, "## %")[1])
+
+			for _, e := range exits {
+				if e.Name == exitName {
+					panic(fmt.Sprintf("Exit name %s already found", exitName))
+				}
+			}
+
+			exits = append(exits, Exit{Name: exitName, End: index + 1})
+
+			// Gather stack information
+			exitGatherUntilRet = len(exits) - 1
+		}
+
+		if exitGatherUntilRet != -1 && strings.Contains(line, "ret") {
+
+			// Lines of postamble
+			stackLines := src[exits[exitGatherUntilRet].End : index+1]
+
+			exits[exitGatherUntilRet].stack = ExtractStackInfo(stackLines)
+
+			exitGatherUntilRet = -1
+		}
+	}
+
+	segments := []Segment{}
+
+	entryGatherUntilRet := -1
+
+	// Find start of subroutines
+	for index, line := range src {
+
 		if strings.Contains(line, "## @") {
 			entryName := ExtractName(strings.Split(line, "## @")[1])
 
@@ -52,40 +91,41 @@ func SegmentSource(src []string) []Segment {
 				}
 			}
 
-			segments = append(segments, Segment{Name: entryName, Start: index + 1})
-		}
-
-		// Find end of a subroutine
-		if strings.Contains(line, ".exit") {
-			exitName := ExtractName(strings.Split(line, "## %")[1])
-
-			isegment := -1
-			var s Segment
-			for isegment, s = range segments {
-				if s.Name == exitName {
+			var stack Stack
+			end := -1
+			for _, e := range exits {
+				if e.Name == entryName {
+					end = e.End
+					stack = e.stack
 					break
 				}
 			}
-			if isegment == -1 || isegment == len(segments) {
-				panic(fmt.Sprintf("No entry name found for exit %s", exitName))
+
+			segments = append(segments, Segment{Name: entryName, Start: index + 1, End: end, stack: stack})
+
+			if end == -1 {
+				// No exit label found, start searching for ret statement
+				entryGatherUntilRet = len(segments) - 1
 			}
-
-			segments[isegment].End = index + 1 // include this line (label)
-
-			// Gather stack information
-			gatherUntilRetForSegment = isegment
 		}
 
-		if gatherUntilRetForSegment != -1 {
-			if strings.Contains(line, "ret") {
+		if entryGatherUntilRet != -1 && strings.Contains(line, "ret") {
 
-				// Lines of postamble
-				stackLines := src[segments[gatherUntilRetForSegment].End:index+1]
-
-				segments[gatherUntilRetForSegment].stack = ExtractStackInfo(stackLines)
-
-				gatherUntilRetForSegment = -1
+			// Found closing ret statement, start searching back to first non closing statement
+			i := 1
+			for ; index-i >= 0; i++ {
+				if !IsStdCallFooter(src[index-i]) {
+					break
+				}
 			}
+			segments[entryGatherUntilRet].End = index - i + 1
+
+			stackLines := src[index-i+1 : index+1]
+
+			fmt.Println(stackLines)
+			segments[entryGatherUntilRet].stack = ExtractStackInfo(stackLines)
+
+			entryGatherUntilRet = -1
 		}
 	}
 

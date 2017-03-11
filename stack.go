@@ -95,10 +95,21 @@ func (s *Stack) IsStdCallHeader(line string) (bool, string) {
 			return false, ""
 		}
 	} else {
-		panic(fmt.Sprintf("Unknown line for IsHeader: %s", line))
+		panic(fmt.Sprintf("Unknown line for IsStdCallHeader: %s", line))
 	}
 
 	return false, ""
+}
+
+func IsStdCallFooter(line string) bool {
+
+	if strings.Contains(line, "vzeroupper") {
+		return true
+	} else if strings.Contains(line, "pop") {
+		return true
+	}
+
+	return false
 }
 
 func (s *Stack) Return() []string {

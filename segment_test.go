@@ -338,4 +338,24 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 
 	testSegment(t, strings.Split(src2, "\n"), segments2)
 
+	src3 := `        .globl  __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
+        .align  4, 0x90
+__ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
+## BB#0:
+        push    rbp
+        mov     rbp, rsp
+        vmovups ymm0, ymmword ptr [rdi]
+        vmovups ymm1, ymmword ptr [rsi]
+        vfmadd213ps     ymm1, ymm0, ymmword ptr [rdx]
+        vmovups ymmword ptr [rcx], ymm1
+        pop     rbp
+        vzeroupper
+        ret
+
+.subsections_via_symbols`
+
+	segments3 := []Segment{}
+	segments3 = append(segments3, Segment{Name: "SimdAvx2MultiplyAndAdd", Start: 3, End: 10})
+
+	testSegment(t, strings.Split(src3, "\n"), segments3)
 }

@@ -67,7 +67,7 @@ func process(lines []string) ([]string, error) {
 		// Define subroutine
 		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", s.Name))
 
-		result = append(result, InsertArguments()...)
+		result = append(result, InsertArguments(6)...)
 
 		assembly, err := assemblify(lines[s.Start:s.End], table, s.stack)
 		if err != nil {

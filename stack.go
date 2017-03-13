@@ -61,7 +61,7 @@ func ExtractStackInfo(postamble []string) Stack {
 	return stack
 }
 
-func (s *Stack) IsStdCallHeader(line string) (bool, string) {
+func (s *Stack) IsStdCallPrologue(line string) (bool, string) {
 
 	if strings.Contains(line, "push") {
 		parts := strings.SplitN(line, "push", 2)
@@ -101,7 +101,7 @@ func (s *Stack) IsStdCallHeader(line string) (bool, string) {
 	return false, ""
 }
 
-func IsStdCallFooter(line string) bool {
+func IsStdCallEpilogue(line string) bool {
 
 	if strings.Contains(line, "vzeroupper") {
 		return true

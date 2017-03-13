@@ -114,7 +114,7 @@ func SegmentSource(src []string) []Segment {
 			// Found closing ret statement, start searching back to first non closing statement
 			i := 1
 			for ; index-i >= 0; i++ {
-				if !IsStdCallFooter(src[index-i]) {
+				if !IsStdCallEpilogue(src[index-i]) {
 					break
 				}
 			}

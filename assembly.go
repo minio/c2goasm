@@ -84,7 +84,7 @@ func assemblify(lines []string, table Table, stack Stack) ([]string, error) {
 
 		if eatHeader {
 
-			if b, asm := stack.IsStdCallHeader(line); b {
+			if b, asm := stack.IsStdCallPrologue(line); b {
 				fmt.Println("SKIPPING:", line)
 				if asm != "" {
 					goasm = append(goasm, asm)

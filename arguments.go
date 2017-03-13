@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func ArgumentsOnStack(lines []string) int {
@@ -27,7 +28,13 @@ func ArgumentsOnStack(lines []string) int {
 	return len(offsets)
 }
 
-func GetGolangArgs(name string) int {
+func GetGolangArgs(proto string) int {
 
-	return 1
+	regexpFunc := regexp.MustCompile(`func .*\((.*)\)`)
+
+	if match := regexpFunc.FindStringSubmatch(proto); len(match) > 1 {
+		return len(strings.Split(match[1], ","))
+	} else {
+		panic(fmt.Sprintf("Bad function prototype: %s", proto))
+	}
 }

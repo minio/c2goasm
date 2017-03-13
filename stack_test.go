@@ -29,7 +29,7 @@ func TestStacks(t *testing.T) {
 
 	testStack(t, postamble1, preamble1)
 
-	preamble2 := Stack{SetRbp: true, DynamicSize: true}
+	preamble2 := Stack{SetRbp: true, AlignedStack: true}
 	preamble2.Pushes = append(preamble2.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	//   push    rbp
@@ -78,7 +78,7 @@ func TestStacks(t *testing.T) {
 	//   push    r12
 	//   push    rbx
 	//   sub     rsp, 152`
-	preamble4 := Stack{SetRbp: true, FixedSize: 152}
+	preamble4 := Stack{SetRbp: true, StackSize: 152}
 	preamble4.Pushes = append(preamble4.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	postamble4 := `        add     rsp, 152
@@ -100,7 +100,7 @@ func TestStacks(t *testing.T) {
 	//   push    rbx
 	//   and     rsp, -32
 	//   sub     rsp, 192`
-	preamble5 := Stack{SetRbp: true, DynamicSize: true, VZeroUpper: true}
+	preamble5 := Stack{SetRbp: true, AlignedStack: true, VZeroUpper: true}
 	preamble5.Pushes = append(preamble5.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	postamble5 := `        lea     rsp, [rbp - 40]

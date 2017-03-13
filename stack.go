@@ -7,11 +7,11 @@ import (
 )
 
 type Stack struct {
-	Pushes      []string
-	SetRbp      bool
-	FixedSize   int
-	DynamicSize bool
-	VZeroUpper  bool
+	Pushes       []string
+	SetRbp       bool
+	StackSize    int
+	AlignedStack bool
+	VZeroUpper   bool
 }
 
 func ExtractStackInfo(postamble []string) Stack {
@@ -35,7 +35,7 @@ func ExtractStackInfo(postamble []string) Stack {
 			args := strings.SplitN(argument, ",", 2)
 
 			if strings.TrimSpace(args[0]) == "rsp" {
-				stack.FixedSize, _ = strconv.Atoi(strings.TrimSpace(args[1]))
+				stack.StackSize, _ = strconv.Atoi(strings.TrimSpace(args[1]))
 			} else {
 				panic(fmt.Sprintf("Unexpected add statement for postamble: %s", line))
 			}
@@ -45,7 +45,7 @@ func ExtractStackInfo(postamble []string) Stack {
 			args := strings.SplitN(argument, ",", 2)
 
 			if strings.TrimSpace(args[0]) == "rsp" {
-				stack.DynamicSize = true
+				stack.AlignedStack = true
 			} else {
 				panic(fmt.Sprintf("Unexpected add statement for postamble: %s", line))
 			}
@@ -86,8 +86,8 @@ func (s *Stack) IsStdCallHeader(line string) (bool, string) {
 		args := strings.SplitN(argument, ",", 2)
 		if strings.TrimSpace(args[0]) == "rsp" {
 			space, _ := strconv.Atoi(strings.TrimSpace(args[1]))
-			if s.FixedSize != 0 && s.FixedSize == space {
-				return true, fmt.Sprintf("    SUB $%d, SP", s.FixedSize)
+			if !s.AlignedStack && s.StackSize == space {
+				return true, fmt.Sprintf("    SUB $%d, SP", s.StackSize)
 			} else {
 				panic(fmt.Sprintf("'sub rsp' found but not for fixed stack size: %s", line))
 			}
@@ -116,12 +116,23 @@ func (s *Stack) Return() []string {
 
 	var result []string
 
-	if s.FixedSize != 0 {
-		result = append(result, fmt.Sprintf("    ADD $%d, SP", s.FixedSize))
+	// Restore the stack pointer
+	// - for an aligned stack, restore the stack pointer from the stack itself
+	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
+	if s.AlignedStack {
+		panic("TODO: Restore stack pointer from stack")
+	} else {
+		if s.StackSize != 0 {
+			result = append(result, fmt.Sprintf("    ADD $%d, SP", s.StackSize))
+		}
 	}
+
+	// Clear upper half of YMM register, if so done in the original code
 	if s.VZeroUpper {
 		result = append(result, "    VZEROUPPER")
 	}
+
+	// Finally, return out of the subroutine
 	result = append(result, "    RET")
 
 	return result

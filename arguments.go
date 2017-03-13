@@ -27,29 +27,7 @@ func ArgumentsOnStack(lines []string) int {
 	return len(offsets)
 }
 
-var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
+func GetGolangArgs(name string) int {
 
-// Write the prologue for the subroutine
-func WriteGoasmPrologue(segment Segment, number int, table Table) []string {
-
-	var result []string
-
-	// Output name of subroutine
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", segment.Name))
-
-	arg, reg := 0, ""
-	for arg, reg = range registers {
-
-		result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), %s", arg+1, arg*8, reg))
-		if arg+1 == number {
-			break
-		}
-	}
-
-	if table.IsPresent() {
-		// Setup base pointer for loading constants
-		result = append(result, "", fmt.Sprintf("    LEAQ LCD%s<>(SB), BP"), table.Data)
-	}
-
-	return result
+	return 1
 }

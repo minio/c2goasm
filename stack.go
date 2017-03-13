@@ -112,29 +112,3 @@ func IsStdCallEpilogue(line string) bool {
 	return false
 }
 
-// Write the epilogue for the subroutine
-func (s *Stack) WriteGoasmEpilogue() []string {
-
-	var result []string
-
-	// Restore the stack pointer
-	// - for an aligned stack, restore the stack pointer from the stack itself
-	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
-	if s.AlignedStack {
-		panic("TODO: Restore stack pointer from stack")
-	} else {
-		if s.StackSize != 0 {
-			result = append(result, fmt.Sprintf("    ADD $%d, SP", s.StackSize))
-		}
-	}
-
-	// Clear upper half of YMM register, if so done in the original code
-	if s.VZeroUpper {
-		result = append(result, "    VZEROUPPER")
-	}
-
-	// Finally, return out of the subroutine
-	result = append(result, "    RET")
-
-	return result
-}

@@ -6,67 +6,34 @@ import (
 	"unicode"
 )
 
-func isLower(str string) bool {
+var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 
-	for _, r := range str {
-		return unicode.IsLower(r)
-	}
-	return false
-}
+// Write the prologue for the subroutine
+func WriteGoasmPrologue(segment Segment, number int, table Table) []string {
 
-func removeUndefined(line, undef string) string {
+	var result []string
 
-	if parts := strings.SplitN(line, undef, 2); len(parts) > 1 {
-		line = parts[0] + strings.TrimSpace(parts[1])
-	}
-	return line
-}
+	// Output name of subroutine
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", segment.Name))
 
-// fix Position Independent Labels
-func fixPicLabels(line string, table Table) string {
+	arg, reg := 0, ""
+	for arg, reg = range registers {
 
-	if strings.Contains(line, "[rip + ") {
-		parts := strings.SplitN(line, "[rip + ", 2)
-		label := parts[1][:len(parts[1])-1]
-
-		i := -1
-		var l Label
-		for i, l = range table.Labels {
-			if l.Name == label {
-				line = parts[0] + fmt.Sprintf("%d[rbp] /* [rip + %s */", l.Offset, parts[1])
-				break
-			}
-		}
-		if i == len(table.Labels) {
-			panic(fmt.Sprintf("Failed to find label to replace of position independent code: %s", label))
+		result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), %s", arg+1, arg*8, reg))
+		if arg+1 == number {
+			break
 		}
 	}
 
-	return line
-}
-
-func fixShiftNoArgument(line, ins string) string {
-
-	if strings.Contains(line, ins) {
-		parts := strings.SplitN(line, ins, 2)
-		args := strings.SplitN(parts[1], ",", 2)
-		if len(args) == 1 {
-			line += ", 1"
-		}
+	if table.IsPresent() {
+		// Setup base pointer for loading constants
+		result = append(result, "", fmt.Sprintf("    LEAQ LCD%s<>(SB), BP"), table.Data)
 	}
 
-	return line
+	return result
 }
 
-func fixShifts(line string) string {
-
-	line = fixShiftNoArgument(line, "shr")
-	line = fixShiftNoArgument(line, "sar")
-
-	return line
-}
-
-func assemblify(lines []string, table Table, stack Stack) ([]string, error) {
+func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) {
 
 	var result []string
 
@@ -131,4 +98,92 @@ func assemblify(lines []string, table Table, stack Stack) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// Write the epilogue for the subroutine
+func (s *Stack) WriteGoasmEpilogue() []string {
+
+	var result []string
+
+	// Restore the stack pointer
+	// - for an aligned stack, restore the stack pointer from the stack itself
+	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
+	if s.AlignedStack {
+		panic("TODO: Restore stack pointer from stack")
+	} else {
+		if s.StackSize != 0 {
+			result = append(result, fmt.Sprintf("    ADD $%d, SP", s.StackSize))
+		}
+	}
+
+	// Clear upper half of YMM register, if so done in the original code
+	if s.VZeroUpper {
+		result = append(result, "    VZEROUPPER")
+	}
+
+	// Finally, return out of the subroutine
+	result = append(result, "    RET")
+
+	return result
+}
+
+
+func isLower(str string) bool {
+
+	for _, r := range str {
+		return unicode.IsLower(r)
+	}
+	return false
+}
+
+func removeUndefined(line, undef string) string {
+
+	if parts := strings.SplitN(line, undef, 2); len(parts) > 1 {
+		line = parts[0] + strings.TrimSpace(parts[1])
+	}
+	return line
+}
+
+// fix Position Independent Labels
+func fixPicLabels(line string, table Table) string {
+
+	if strings.Contains(line, "[rip + ") {
+		parts := strings.SplitN(line, "[rip + ", 2)
+		label := parts[1][:len(parts[1])-1]
+
+		i := -1
+		var l Label
+		for i, l = range table.Labels {
+			if l.Name == label {
+				line = parts[0] + fmt.Sprintf("%d[rbp] /* [rip + %s */", l.Offset, parts[1])
+				break
+			}
+		}
+		if i == len(table.Labels) {
+			panic(fmt.Sprintf("Failed to find label to replace of position independent code: %s", label))
+		}
+	}
+
+	return line
+}
+
+func fixShiftNoArgument(line, ins string) string {
+
+	if strings.Contains(line, ins) {
+		parts := strings.SplitN(line, ins, 2)
+		args := strings.SplitN(parts[1], ",", 2)
+		if len(args) == 1 {
+			line += ", 1"
+		}
+	}
+
+	return line
+}
+
+func fixShifts(line string) string {
+
+	line = fixShiftNoArgument(line, "shr")
+	line = fixShiftNoArgument(line, "sar")
+
+	return line
 }

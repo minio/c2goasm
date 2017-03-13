@@ -7,8 +7,9 @@ import (
 )
 
 type Table struct {
-	Data   string
-	Labels []Label
+	Name      string
+	Constants string
+	Labels    []Label
 }
 
 func (t *Table) IsPresent() bool {
@@ -96,7 +97,7 @@ func DefineTable(constants []string, tableName string) Table {
 	}
 	table = append(table, fmt.Sprintf("GLOBL %s<>(SB), 8, $%d", tableName, len(bytes)))
 
-	return Table{Data: strings.Join(table, "\n"), Labels: labels}
+	return Table{Name: tableName, Constants: strings.Join(table, "\n"), Labels: labels}
 }
 
 func SegmentConsts(lines []string) []Table {

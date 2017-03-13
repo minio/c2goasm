@@ -61,24 +61,24 @@ func ExtractStackInfo(postamble []string) Stack {
 	return stack
 }
 
-func (s *Stack) IsStdCallPrologue(line string) (bool, string) {
+func (s *Stack) IsStdCallPrologue(line string) bool {
 
 	if strings.Contains(line, "push") {
 		parts := strings.SplitN(line, "push", 2)
 		fmt.Println("push:", parts[1])
-		return true, ""
+		return true
 	} else if strings.Contains(line, "mov") {
 		parts := strings.SplitN(line, "mov", 2)
 		argument := parts[1]
 		args := strings.SplitN(argument, ",", 2)
 		if strings.TrimSpace(args[0]) == "rbp" && strings.TrimSpace(args[1]) == "rsp" {
 			if s.SetRbpIns {
-				return true, ""
+				return true
 			} else {
 				panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
 			}
 		} else {
-			return false, ""
+			return false
 		}
 	} else if strings.Contains(line, "sub") {
 		parts := strings.SplitN(line, "sub", 2)
@@ -87,18 +87,18 @@ func (s *Stack) IsStdCallPrologue(line string) (bool, string) {
 		if strings.TrimSpace(args[0]) == "rsp" {
 			space, _ := strconv.Atoi(strings.TrimSpace(args[1]))
 			if !s.AlignedStack && s.StackSize == space {
-				return true, fmt.Sprintf("    SUB $%d, SP", s.StackSize)
+				return true
 			} else {
 				panic(fmt.Sprintf("'sub rsp' found but not for fixed stack size: %s", line))
 			}
 		} else {
-			return false, ""
+			return false
 		}
 	} else {
 		panic(fmt.Sprintf("Unknown line for IsStdCallHeader: %s", line))
 	}
 
-	return false, ""
+	return false
 }
 
 func IsStdCallEpilogue(line string) bool {
@@ -111,4 +111,3 @@ func IsStdCallEpilogue(line string) bool {
 
 	return false
 }
-

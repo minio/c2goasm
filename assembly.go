@@ -9,25 +9,54 @@ import (
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 
 // Write the prologue for the subroutine
-func WriteGoasmPrologue(segment Segment, number int, table Table) []string {
+func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 
 	var result []string
 
-	// Output name of subroutine
+	// Output definition of subroutine
 	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", segment.Name))
 
 	arg, reg := 0, ""
+
+	// For the case assembly expects stack based arguments
+	for arg = len(registers); arg < arguments; arg++ {
+		// In case base pointer is used for constants and the offset is non-deterministic
+		if table.IsPresent() && segment.stack.AlignedStack {
+			// Copy golang arguments to C-style stack
+			result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), DI", arg+1, arg*8))
+			result = append(result, fmt.Sprintf("    MOVQ DI, %d(SP)", -256+(arg-6)*8))
+		} else {
+			// We can load the arguments from golang stack, so no need to do anything
+		}
+	}
+
+	// Load initial arguments (up to 6) in corresponding registers
 	for arg, reg = range registers {
 
 		result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), %s", arg+1, arg*8, reg))
-		if arg+1 == number {
+		if arg+1 == arguments {
 			break
 		}
 	}
 
+	// Setup the stack pointer
+	if segment.stack.AlignedStack {
+		// Aligned stack as required (zeroing out lower order bits), create space, and save original stack pointer
+		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
+		result = append(result, fmt.Sprintf("    AND $%d, SP", 32))
+		result = append(result, fmt.Sprintf("    SUB $%d, SP", segment.stack.StackSize))
+		result = append(result, fmt.Sprintf("    MOVQ BP, -8(SP)"))
+	} else if segment.stack.StackSize != 0 {
+		// Unaligned stack, simply create space as required
+		result = append(result, fmt.Sprintf("    SUB $%d, SP", segment.stack.StackSize))
+	}
+
 	if table.IsPresent() {
 		// Setup base pointer for loading constants
-		result = append(result, "", fmt.Sprintf("    LEAQ LCD%s<>(SB), BP"), table.Data)
+		result = append(result, "", fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name), "")
+	} else if segment.stack.AlignedStack {
+		// Setup base pointer to be able to load stack based arguments
+		result = append(result, "", fmt.Sprintf("    MOVQ SP, BP"), "")
 	}
 
 	return result
@@ -38,7 +67,6 @@ func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) 
 	var result []string
 
 	eatHeader := true
-	var goasm []string
 	for _, line := range lines {
 
 		// Remove ## comments
@@ -51,17 +79,11 @@ func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) 
 
 		if eatHeader {
 
-			if b, asm := stack.IsStdCallPrologue(line); b {
+			if stack.IsStdCallPrologue(line) {
 				fmt.Println("SKIPPING:", line)
-				if asm != "" {
-					goasm = append(goasm, asm)
-				}
 				continue
 			} else {
-				// Output equivalent asm instructions for golang
-				result = append(result, goasm...)
-
-				// And we are done with removing the std call header
+				// We are done with removing the std call header
 				eatHeader = false
 			}
 		}
@@ -91,8 +113,10 @@ func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) 
 		line = removeUndefined(line, "xmmword")
 		line = removeUndefined(line, "ymmword")
 
-		line = fixShifts(line)
-		line = fixPicLabels(line, table)
+		line = fixShiftInstructions(line)
+		if table.IsPresent() {
+			line = fixPicLabels(line, table)
+		}
 
 		result = append(result, line)
 	}
@@ -109,7 +133,7 @@ func WriteGoasmEpilogue(stack Stack) []string {
 	// - for an aligned stack, restore the stack pointer from the stack itself
 	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
 	if stack.AlignedStack {
-		panic("TODO: Restore stack pointer from stack")
+		result = append(result, fmt.Sprintf("    MOVQ -8(SP), SP"))
 	} else {
 		if stack.StackSize != 0 {
 			result = append(result, fmt.Sprintf("    ADD $%d, SP", stack.StackSize))
@@ -126,7 +150,6 @@ func WriteGoasmEpilogue(stack Stack) []string {
 
 	return result
 }
-
 
 func isLower(str string) bool {
 
@@ -180,10 +203,20 @@ func fixShiftNoArgument(line, ins string) string {
 	return line
 }
 
-func fixShifts(line string) string {
+func fixShiftInstructions(line string) string {
 
 	line = fixShiftNoArgument(line, "shr")
 	line = fixShiftNoArgument(line, "sar")
 
 	return line
+}
+
+// Fix loads from '[rbp + constant]
+func fixRbpPlusLoad() string {
+	return ""
+}
+
+// Fix loads from '[rbp - constant]
+func fixRbpMinusLower() string {
+	return ""
 }

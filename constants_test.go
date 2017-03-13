@@ -9,8 +9,8 @@ func testConstant(t *testing.T, constants, expected string) {
 
 	table := DefineTable(strings.Split(constants, "\n"), "LCTABLE")
 
-	if table.Data != expected {
-		t.Errorf("TestConstants(): \nexpected %s\ngot      %s", expected, table.Data)
+	if table.Constants != expected {
+		t.Errorf("TestConstants(): \nexpected %s\ngot      %s", expected, table.Constants)
 	}
 }
 

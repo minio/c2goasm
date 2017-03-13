@@ -60,20 +60,22 @@ func process(assembly []string) ([]string, error) {
 	// Iterate over all subroutines
 	for isegment, s := range segments {
 
+		golangArgs := GetGolangArgs(s.Name)
 		argsOnStack := ArgumentsOnStack(assembly[s.Start:s.End])
-		fmt.Println("ARGUMENTS ON STACK", argsOnStack)
+		if golangArgs > 6 && golangArgs-6 != argsOnStack {
+			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, argsOnStack))
+		}
 
 		// Check for constants table
 		var table Table
 		if table = GetCorrespondingTable(assembly[s.Start:s.End], tables); table.IsPresent() {
 
 			// Output constants table
-			result = append(result, strings.Split(table.Data, "\n")...)
-			result = append(result, "")	// append empty line
+			result = append(result, strings.Split(table.Constants, "\n")...)
+			result = append(result, "") // append empty line
 		}
 
-		// Define subroutine
-
+		// Write header for subroutine in go assembly
 		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code

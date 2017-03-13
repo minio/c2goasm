@@ -74,17 +74,17 @@ func process(assembly []string) ([]string, error) {
 
 		// Define subroutine
 
-		result = append(result, WriteGoasmPrologue(s, 6, table)...)
+		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := assemblify(assembly[s.Start:s.End], table, s.stack)
+		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, s.stack)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}
 		result = append(result, assembly...)
 
 		// Return from subroutine
-		result = append(result, s.stack.WriteGoasmEpilogue()...)
+		result = append(result, WriteGoasmEpilogue(s.stack)...)
 
 		if isegment < len(segments)-1 {
 			// Empty lines before next subroutine

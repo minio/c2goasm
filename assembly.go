@@ -101,23 +101,23 @@ func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) 
 }
 
 // Write the epilogue for the subroutine
-func (s *Stack) WriteGoasmEpilogue() []string {
+func WriteGoasmEpilogue(stack Stack) []string {
 
 	var result []string
 
 	// Restore the stack pointer
 	// - for an aligned stack, restore the stack pointer from the stack itself
 	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
-	if s.AlignedStack {
+	if stack.AlignedStack {
 		panic("TODO: Restore stack pointer from stack")
 	} else {
-		if s.StackSize != 0 {
-			result = append(result, fmt.Sprintf("    ADD $%d, SP", s.StackSize))
+		if stack.StackSize != 0 {
+			result = append(result, fmt.Sprintf("    ADD $%d, SP", stack.StackSize))
 		}
 	}
 
 	// Clear upper half of YMM register, if so done in the original code
-	if s.VZeroUpper {
+	if stack.VZeroUpper {
 		result = append(result, "    VZEROUPPER")
 	}
 

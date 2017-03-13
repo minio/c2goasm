@@ -4,7 +4,8 @@ import (
 	"fmt"
 )
 
-func InsertArguments(number int) []string {
+// Write the prologue for the subroutine
+func WriteGoasmPrologue(number int) []string {
 
 	registers := []string{"DI", "SI", "DX", "CX", "R8", "R9"}
 

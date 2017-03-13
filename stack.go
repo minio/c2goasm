@@ -112,7 +112,8 @@ func IsStdCallFooter(line string) bool {
 	return false
 }
 
-func (s *Stack) Return() []string {
+// Write the epilogue for the subroutine
+func (s *Stack) WriteGoasmEpilogue() []string {
 
 	var result []string
 

@@ -43,7 +43,7 @@ func writeLines(lines []string, path string) error {
 	return w.Flush()
 }
 
-func process(lines []string) ([]string, error) {
+func process(assembly []string) ([]string, error) {
 
 	// TODO
 	// strip header
@@ -52,30 +52,32 @@ func process(lines []string) ([]string, error) {
 	// test for absence of CALLs
 
 	// Get one segment per function
-	segments := SegmentSource(lines)
-	tables := SegmentConsts(lines)
+	segments := SegmentSource(assembly)
+	tables := SegmentConsts(assembly)
 
 	var result []string
 
-	// Iterate over all functions
+	// Iterate over all subroutines
 	for isegment, s := range segments {
+
+		argsOnStack := ArgumentsOnStack(assembly[s.Start:s.End])
+		fmt.Println("ARGUMENTS ON STACK", argsOnStack)
 
 		// Check for constants table
 		var table Table
-		if table = GetCorrespondingTable(lines[s.Start:s.End], tables); len(table.Labels) > 0 {
+		if table = GetCorrespondingTable(assembly[s.Start:s.End], tables); table.IsPresent() {
 
 			// Output constants table
 			result = append(result, strings.Split(table.Data, "\n")...)
-
-			result = append(result, "")
+			result = append(result, "")	// append empty line
 		}
 
 		// Define subroutine
-		result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", s.Name))
 
-		result = append(result, WriteGoasmPrologue(6)...)
+		result = append(result, WriteGoasmPrologue(s, 6, table)...)
 
-		assembly, err := assemblify(lines[s.Start:s.End], table, s.stack)
+		// Write body of code
+		assembly, err := assemblify(assembly[s.Start:s.End], table, s.stack)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}

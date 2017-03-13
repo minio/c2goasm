@@ -11,6 +11,10 @@ type Table struct {
 	Labels []Label
 }
 
+func (t *Table) IsPresent() bool {
+	return len(t.Labels) > 0
+}
+
 type Label struct {
 	Name   string
 	Offset uint
@@ -102,7 +106,7 @@ func SegmentConsts(lines []string) []Table {
 	searchNextSection := false
 	for index, line := range lines {
 
-		if strings.Contains(line, "__const") {
+		if !searchNextSection && (strings.Contains(line, "__const") || strings.Contains(line, "__literal8")) {
 
 			searchNextSection = true
 			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: index + 1})

@@ -8,7 +8,7 @@ import (
 
 type Stack struct {
 	Pushes       []string
-	SetRbp       bool
+	SetRbpIns    bool
 	StackSize    int
 	AlignedStack bool
 	VZeroUpper   bool
@@ -27,7 +27,7 @@ func ExtractStackInfo(postamble []string) Stack {
 
 			stack.Pushes = append(stack.Pushes, register)
 			if register == "rbp" {
-				stack.SetRbp = true
+				stack.SetRbpIns = true
 			}
 		} else if strings.Contains(line, "add") {
 			parts := strings.SplitN(line, "add", 2)
@@ -72,7 +72,7 @@ func (s *Stack) IsStdCallPrologue(line string) (bool, string) {
 		argument := parts[1]
 		args := strings.SplitN(argument, ",", 2)
 		if strings.TrimSpace(args[0]) == "rbp" && strings.TrimSpace(args[1]) == "rsp" {
-			if s.SetRbp {
+			if s.SetRbpIns {
 				return true, ""
 			} else {
 				panic(fmt.Sprintf("mov found but not expected to be set: %s", line))

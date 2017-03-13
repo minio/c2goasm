@@ -1,10 +1,9 @@
 package main
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
-
 
 func testArguments(t *testing.T, source string, expected int) {
 
@@ -54,30 +53,30 @@ func TestArguments(t *testing.T) {
 
 	testArguments(t, arguments8, 2)
 
-//	golang8 := `
-//    MOVQ arg1+0(FP), DI
-//    MOVQ arg2+8(FP), SI
-//    MOVQ arg3+16(FP), DX
-//    MOVQ arg4+24(FP), CX
-//    MOVQ arg5+32(FP), R8
-//    MOVQ arg6+40(FP), R9
-//    MOVQ arg7+48(FP), AX
-//    MOVQ arg8+56(FP), R10
-//
-//	map rbp + 16 --> 48(FP)
-//	map rbp + 24 --> 56(FP)
-//
-//	 // mov r10, qword [rbp + 24]
-//	 // mov rax, qword [rbp + 16]
-//	 // vmovups     ymm0, [rdi]
-//	 // vmovups     ymm1, [rsi]
-//	 // vmovups     ymm2, [rcx]
-//	 // vmovups     ymm3, [r9]
-//	 // vfmadd213ps ymm1, ymm0, [rdx]
-//	 // vfmadd213ps ymm1, ymm2, [r8]
-//	 // vfmadd213ps ymm1, ymm3, [rax]
-//	 // vmovups     [r10], ymm1
-//	`
+	//	golang8 := `
+	//    MOVQ arg1+0(FP), DI
+	//    MOVQ arg2+8(FP), SI
+	//    MOVQ arg3+16(FP), DX
+	//    MOVQ arg4+24(FP), CX
+	//    MOVQ arg5+32(FP), R8
+	//    MOVQ arg6+40(FP), R9
+	//    MOVQ arg7+48(FP), AX
+	//    MOVQ arg8+56(FP), R10
+	//
+	//	map rbp + 16 --> 48(FP)
+	//	map rbp + 24 --> 56(FP)
+	//
+	//	 // mov r10, qword [rbp + 24]
+	//	 // mov rax, qword [rbp + 16]
+	//	 // vmovups     ymm0, [rdi]
+	//	 // vmovups     ymm1, [rsi]
+	//	 // vmovups     ymm2, [rcx]
+	//	 // vmovups     ymm3, [r9]
+	//	 // vfmadd213ps ymm1, ymm0, [rdx]
+	//	 // vfmadd213ps ymm1, ymm2, [r8]
+	//	 // vfmadd213ps ymm1, ymm3, [rax]
+	//	 // vmovups     [r10], ymm1
+	//	`
 
 	arguments9 := `
 	 mov r10, qword [rbp + 32]
@@ -141,56 +140,56 @@ func TestArguments(t *testing.T) {
 	testArguments(t, shiftbilinear, 9)
 
 	//	shiftbilinear_rsp := `
-//	mov	rbp, rsp
-//	sub	rsp, 152
-//
-//	mov	qword ptr [rsp], r8
-//	mov	qword ptr [rsp + 8], r13
-//	mov	qword ptr [rsp + 16], rsi
-//	mov	qword ptr [rsp + 24], r12
-//	mov	qword ptr [rsp + 32], rdi
-//	mov	qword ptr [rsp + 40], rbx
-//	mov	qword ptr [rsp + 48], rcx
-//	mov	qword ptr [rsp + 56], rdx
-//	mov	qword ptr [rsp + 64], rax
-//	mov	qword ptr [rsp + 72], rdx
-//	mov	qword ptr [rsp + 80], rdx
-//
-//	mov	dword ptr [rsp], ecx
-//	mov	qword ptr [rsp + 8], r12
-//	mov	qword ptr [rsp + 16], rax
-//
-//	add	rsp, 152
-//	`
-//
-//	shiftlinear_rbp := `
-//	mov	qword ptr [rbp - 48], rdi
-//	mov	qword ptr [rbp - 56], rdx
-//	mov	qword ptr [rbp - 64], rcx
-//	mov	qword ptr [rbp - 72], rcx
-//	lea	rdx, [rbp - 80]
-//	lea	rdx, [rbp - 76]
-//	lea	rdx, [rbp - 72]
-//	lea	rdi, [rbp - 48]
-//	lea	rdx, [rbp - 56]
-//	lea	rcx, [rbp - 64]
-//	mov	rbx, qword ptr [rbp - 48]
-//	mov	rdx, qword ptr [rbp - 56]
-//	mov	r11, qword ptr [rbp - 64]
-//	mov	r9d, dword ptr [rbp - 76]
-//	mov	ecx, dword ptr [rbp - 80]
-//	mov	r12, qword ptr [rbp - 72]
-//	mov	qword ptr [rbp - 104], rax ## 8-byte Spill
-//	mov	qword ptr [rbp - 88], r11 ## 8-byte Spill
-//	mov	qword ptr [rbp - 96], rax ## 8-byte Spill
-//	cmp	qword ptr [rbp - 96], r14 ## 8-byte Folded Reload
-//	mov	qword ptr [rbp - 104], rax ## 8-byte Spill
-//	mov	qword ptr [rbp - 88], r11 ## 8-byte Spill
-//	cmp	qword ptr [rbp - 104], 7 ## 8-byte Folded Reload
-//	mov	rax, qword ptr [rbp - 88] ## 8-byte Reload
-//	mov	qword ptr [rbp - 88], rax ## 8-byte Spill
-//	mov	rax, qword ptr [rbp - 88] ## 8-byte Reload
-//	`
+	//	mov	rbp, rsp
+	//	sub	rsp, 152
+	//
+	//	mov	qword ptr [rsp], r8
+	//	mov	qword ptr [rsp + 8], r13
+	//	mov	qword ptr [rsp + 16], rsi
+	//	mov	qword ptr [rsp + 24], r12
+	//	mov	qword ptr [rsp + 32], rdi
+	//	mov	qword ptr [rsp + 40], rbx
+	//	mov	qword ptr [rsp + 48], rcx
+	//	mov	qword ptr [rsp + 56], rdx
+	//	mov	qword ptr [rsp + 64], rax
+	//	mov	qword ptr [rsp + 72], rdx
+	//	mov	qword ptr [rsp + 80], rdx
+	//
+	//	mov	dword ptr [rsp], ecx
+	//	mov	qword ptr [rsp + 8], r12
+	//	mov	qword ptr [rsp + 16], rax
+	//
+	//	add	rsp, 152
+	//	`
+	//
+	//	shiftlinear_rbp := `
+	//	mov	qword ptr [rbp - 48], rdi
+	//	mov	qword ptr [rbp - 56], rdx
+	//	mov	qword ptr [rbp - 64], rcx
+	//	mov	qword ptr [rbp - 72], rcx
+	//	lea	rdx, [rbp - 80]
+	//	lea	rdx, [rbp - 76]
+	//	lea	rdx, [rbp - 72]
+	//	lea	rdi, [rbp - 48]
+	//	lea	rdx, [rbp - 56]
+	//	lea	rcx, [rbp - 64]
+	//	mov	rbx, qword ptr [rbp - 48]
+	//	mov	rdx, qword ptr [rbp - 56]
+	//	mov	r11, qword ptr [rbp - 64]
+	//	mov	r9d, dword ptr [rbp - 76]
+	//	mov	ecx, dword ptr [rbp - 80]
+	//	mov	r12, qword ptr [rbp - 72]
+	//	mov	qword ptr [rbp - 104], rax ## 8-byte Spill
+	//	mov	qword ptr [rbp - 88], r11 ## 8-byte Spill
+	//	mov	qword ptr [rbp - 96], rax ## 8-byte Spill
+	//	cmp	qword ptr [rbp - 96], r14 ## 8-byte Folded Reload
+	//	mov	qword ptr [rbp - 104], rax ## 8-byte Spill
+	//	mov	qword ptr [rbp - 88], r11 ## 8-byte Spill
+	//	cmp	qword ptr [rbp - 104], 7 ## 8-byte Folded Reload
+	//	mov	rax, qword ptr [rbp - 88] ## 8-byte Reload
+	//	mov	qword ptr [rbp - 88], rax ## 8-byte Spill
+	//	mov	rax, qword ptr [rbp - 88] ## 8-byte Reload
+	//	`
 }
 
 func testProto(t *testing.T, proto string, expected int) {

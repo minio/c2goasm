@@ -45,6 +45,12 @@ func writeLines(lines []string, path string) error {
 
 func process(lines []string) ([]string, error) {
 
+	// TODO
+	// strip header
+	// add golang header
+	// consistent use of rbp & rsp
+	// test for absence of CALLs
+
 	// Get one segment per function
 	segments := SegmentSource(lines)
 	tables := SegmentConsts(lines)

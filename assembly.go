@@ -127,10 +127,6 @@ func assemblify(lines []string, table Table, stack Stack) ([]string, error) {
 		line = fixShifts(line)
 		line = fixPicLabels(line, table)
 
-		// TODO
-		// strip header
-		// add golang header
-		// consistent use of rbp & rsp
 		result = append(result, line)
 	}
 

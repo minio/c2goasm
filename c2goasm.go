@@ -43,7 +43,7 @@ func writeLines(lines []string, path string) error {
 	return w.Flush()
 }
 
-func process(assembly []string) ([]string, error) {
+func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 	// TODO
 	// strip header
@@ -60,7 +60,7 @@ func process(assembly []string) ([]string, error) {
 	// Iterate over all subroutines
 	for isegment, s := range segments {
 
-		golangArgs := GetGolangArgs(s.Name)
+		golangArgs := GetGolangArgs(goCompanionFile, s.Name)
 		argsOnStack := ArgumentsOnStack(assembly[s.Start:s.End])
 		if golangArgs > 6 && golangArgs-6 != argsOnStack {
 			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, argsOnStack))
@@ -100,17 +100,27 @@ func process(assembly []string) ([]string, error) {
 func main() {
 
 	if len(os.Args) < 3 {
-		fmt.Printf("error: no input files specified\n\n")
+		fmt.Printf("error: not enough input files specified\n\n")
 		fmt.Println("usage: c2goasm /path/to/c-project/build/SomeGreatCode.cpp.s SomeGreatCode_amd64.s")
 		return
 	}
+	if !strings.HasSuffix(os.Args[2], ".s") {
+		fmt.Printf("error: second parameter should have '.s' extension\n")
+		return
+	}
+	goCompanion := os.Args[2][:len(os.Args[2])-2] + ".go"
+	if _, err := os.Stat(goCompanion); os.IsNotExist(err) {
+		fmt.Printf("error: companion '.go' file is missing for %s\n", os.Args[2])
+		return
+	}
+
 	fmt.Println("Processing", os.Args[1])
 	lines, err := readLines(os.Args[1])
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
 
-	result, err := process(lines)
+	result, err := process(lines, goCompanion)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(-1)

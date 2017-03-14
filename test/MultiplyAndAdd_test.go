@@ -1,7 +1,6 @@
 package c2goasmtest
 
 import (
-	"fmt"
 	"testing"
 )
 

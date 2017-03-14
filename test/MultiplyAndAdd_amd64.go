@@ -10,10 +10,6 @@ import (
 //go:noescape
 func _MultiplyAndAdd(vec1, vec2, vec3, result unsafe.Pointer)
 
-type drijvend struct {
-	a,b,c,d,e,f,g,h float32
-}
-
 func MultiplyAndAdd(f1, f2, f3 [8]float32) [8]float32 {
 
 	_f4 := [8]float32{}

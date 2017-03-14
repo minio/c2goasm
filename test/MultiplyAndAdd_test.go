@@ -21,7 +21,6 @@ func TestMultiplyAndAdd(t *testing.T) {
 
 	for i := 0; i < 8; i++ {
 		expected := f1[i]*f2[i]+f3[i]
-		fmt.Println(f4[i])
 		if f4[i] != expected {
 			t.Errorf("TestMultiplyAndAdd(): \nexpected %s\ngot      %s", expected, f4[i])
 		}

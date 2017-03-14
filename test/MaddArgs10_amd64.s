@@ -3,16 +3,16 @@
 
 TEXT ·_MaddArgs10(SB), 7, $0
 
-    MOVQ arg1+0(FP), DI          // movq    0x8(%rsp), %rdi
-    MOVQ arg2+8(FP), SI          // movq    0x10(%rsp), %rsi
-    MOVQ arg3+16(FP), DX         // movq    0x18(%rsp), %rdx
-    MOVQ arg4+24(FP), CX         // movq    0x20(%rsp), %rcx
-    MOVQ arg5+32(FP), R8         // movq    0x28(%rsp), %r8
-    MOVQ arg6+40(FP), R9         // movq    0x30(%rsp), %r9
-    LONG $0x24448b48; BYTE $0x38 // mov    rax, 0x38[rsp] /* qword [rbp + 16] */
-    LONG $0x245c8b48; BYTE $0x40 // mov    rbx, 0x40[rsp] /* qword [rbp + 24] */
-    LONG $0x245c8b4c; BYTE $0x48 // mov    r11, 0x48[rsp] /* qword [rbp + 32] */
-    LONG $0x24548b4c; BYTE $0x50 // mov    r10, 0x50[rsp] /* qword [rbp + 40] */
+    MOVQ arg1+0(FP), DI
+    MOVQ arg2+8(FP), SI
+    MOVQ arg3+16(FP), DX
+    MOVQ arg4+24(FP), CX
+    MOVQ arg5+32(FP), R8
+    MOVQ arg6+40(FP), R9
+    LONG $0x24548b4c; BYTE $0x50 // mov    r10, qword 80[rsp] /* [rbp + 40] */
+    LONG $0x245c8b4c; BYTE $0x48 // mov    r11, qword 72[rsp] /* [rbp + 32] */
+    LONG $0x24448b48; BYTE $0x38 // mov    rax, qword 56[rsp] /* [rbp + 16] */
+    LONG $0x245c8b48; BYTE $0x40 // mov    rbx, qword 64[rsp] /* [rbp + 24] */
     LONG $0x0710fcc5             // vmovups    ymm0, [rdi]
     LONG $0x0e10fcc5             // vmovups    ymm1, [rsi]
     LONG $0x1110fcc5             // vmovups    ymm2, [rcx]

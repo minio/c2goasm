@@ -1,4 +1,4 @@
-package main
+package c2goasmtest
 
 import (
 	"testing"

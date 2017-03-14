@@ -7,7 +7,7 @@ DATA LCDATA1<>+0x010(SB)/8, $0x40c0000040a00000
 DATA LCDATA1<>+0x018(SB)/8, $0x4100000040e00000
 GLOBL LCDATA1<>(SB), 8, $32
 
-TEXT ·_MultiplyAndAddConstant(SB), 7, $0
+TEXT ·_MaddConstant(SB), 7, $0
 
     MOVQ arg1+0(FP), DI
     MOVQ arg2+8(FP), SI

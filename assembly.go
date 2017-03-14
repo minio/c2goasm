@@ -115,6 +115,7 @@ func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArg
 		line = removeUndefined(line, "ptr")
 		line = removeUndefined(line, "xmmword")
 		line = removeUndefined(line, "ymmword")
+		line = removeUndefined(line, "# NOREX")
 
 		line = fixShiftInstructions(line)
 		if table.IsPresent() {

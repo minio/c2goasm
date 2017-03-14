@@ -107,7 +107,7 @@ func SegmentConsts(lines []string) []Table {
 	searchNextSection := false
 	for index, line := range lines {
 
-		if !searchNextSection && (strings.Contains(line, "__const") || strings.Contains(line, "__literal8")) {
+		if !searchNextSection && (strings.Contains(line, "__const") || strings.Contains(line, "__literal8") || strings.Contains(line, "__literal16")) {
 
 			searchNextSection = true
 			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: index + 1})

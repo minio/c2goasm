@@ -49,7 +49,7 @@ func SegmentSource(src []string) []Segment {
 	// Collect exit of subroutines
 	for index, line := range src {
 
-		if strings.Contains(line, ".exit") {
+		if strings.HasSuffix(line, ".exit") {
 			exitName := ExtractName(strings.Split(line, "## %")[1])
 
 			for _, e := range exits {

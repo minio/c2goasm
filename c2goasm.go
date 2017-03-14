@@ -61,9 +61,9 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	for isegment, s := range segments {
 
 		golangArgs := GetGolangArgs(goCompanionFile, s.Name)
-		argsOnStack := ArgumentsOnStack(assembly[s.Start:s.End])
-		if golangArgs > 6 && golangArgs-6 != argsOnStack {
-			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, argsOnStack))
+		stackArgs := ArgumentsOnStack(assembly[s.Start:s.End])
+		if golangArgs > 6 && golangArgs-6 != stackArgs.Number {
+			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, stackArgs.Number))
 		}
 
 		// Check for constants table
@@ -79,7 +79,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, s.stack)
+		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, s.stack, stackArgs)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}

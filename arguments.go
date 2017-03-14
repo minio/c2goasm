@@ -7,25 +7,34 @@ import (
 	"strings"
 )
 
-func ArgumentsOnStack(lines []string) int {
+type StackArgs struct {
+	Number        int
+	OffsetToFirst int
+}
+
+func ArgumentsOnStack(lines []string) StackArgs {
 
 	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]$`)
 
-	offsets := make(map[int]bool)
+	offsets := make(map[uint]bool)
 
 	for _, l := range lines {
 
 		if match := regexpRbpLoadHigher.FindStringSubmatch(l); len(match) > 1 {
 			offset, _ := strconv.Atoi(match[1])
-			if _, found := offsets[offset]; !found {
-				offsets[offset] = true
+			if _, found := offsets[uint(offset)]; !found {
+				offsets[uint(offset)] = true
 			}
 		}
 	}
 
-	fmt.Println(offsets)
-
-	return len(offsets)
+	offset := ^uint(0)
+	for o, _ := range offsets {
+		if o < offset {
+			offset = o
+		}
+	}
+	return StackArgs{Number: len(offsets), OffsetToFirst: int(offset)}
 }
 
 func GetGolangArgs(goCompanion, protoName string) int {

@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+	"regexp"
+	"strconv"
 )
 
+const returnAddrOnStack = 8
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 
 // Write the prologue for the subroutine
@@ -62,7 +65,7 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 	return result
 }
 
-func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) {
+func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArgs) ([]string, error) {
 
 	var result []string
 
@@ -117,6 +120,8 @@ func WriteGoasmBody(lines []string, table Table, stack Stack) ([]string, error) 
 		if table.IsPresent() {
 			line = fixPicLabels(line, table)
 		}
+
+		line = fixRbpPlusLoad(line, stackArgs)
 
 		result = append(result, line)
 	}
@@ -211,9 +216,21 @@ func fixShiftInstructions(line string) string {
 	return line
 }
 
-// Fix loads from '[rbp + constant]
-func fixRbpPlusLoad() string {
-	return ""
+// Fix loads in the form of '[rbp + constant]'
+// These are load instructions for stack-based arguments that occur after the first 6 arguments
+// Remap to rsp/stack pointer and load from golang stack
+func fixRbpPlusLoad(line string, stackArgs StackArgs) string {
+
+	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]$`)
+
+	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
+		offset, _ := strconv.Atoi(match[1])
+		offset = offset - stackArgs.OffsetToFirst + returnAddrOnStack + 8*len(registers)
+		parts := strings.SplitN(line, "[rbp + ", 2)
+		line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+	}
+
+	return line
 }
 
 // Fix loads from '[rbp - constant]

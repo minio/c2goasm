@@ -1,19 +1,31 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
 
-func testStack(t *testing.T, postamble string, expected Stack) {
-	preample := ExtractStackInfo(strings.Split(postamble, "\n"))
-	fmt.Println(preample)
-	fmt.Println(expected)
+func equalString(a, b []string) bool {
 
-	//if preample != expected {
-	//	t.Errorf("TestNames(): \nexpected %s\ngot      %s", expected, preample)
-	//}
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func testStack(t *testing.T, postamble string, expected Stack) {
+	preamble := ExtractStackInfo(strings.Split(postamble, "\n"))
+
+	if preamble.StackSize != expected.StackSize || preamble.AlignedStack != expected.AlignedStack ||
+	   preamble.VZeroUpper != expected.VZeroUpper || !equalString(preamble.Pushes, expected.Pushes) {
+		t.Errorf("testStack(): \nexpected %s\ngot      %s", expected, preamble)
+	}
 }
 
 func TestStacks(t *testing.T) {

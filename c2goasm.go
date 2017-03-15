@@ -105,6 +105,27 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	return result, nil
 }
 
+func stripComments(file string) {
+
+	lines, err := readLines(file)
+	if err != nil {
+		log.Fatalf("readLines: %s", err)
+	}
+
+	for i, l := range lines {
+		if strings.Contains(l, "LONG") || strings.Contains(l, "WORD") || strings.Contains(l, "BYTE") {
+			opcode := strings.TrimSpace(strings.SplitN(l, "//", 2)[0])
+			lines[i] = strings.SplitN(l, opcode, 2)[0] + opcode
+		}
+	}
+
+	err = writeLines(lines, file)
+	if err != nil {
+		log.Fatalf("writeLines: %s", err)
+	}
+
+}
+
 func main() {
 
 	flag.Parse()
@@ -150,6 +171,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("asm2plan9s: %v", err)
 		}
+	}
+
+	if *stripFlag {
+		stripComments(assemblyFile)
 	}
 
 }

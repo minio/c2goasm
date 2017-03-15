@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"regexp"
 )
 
 type Stack struct {
@@ -103,9 +104,13 @@ func (s *Stack) IsStdCallPrologue(line string) bool {
 
 func IsStdCallEpilogue(line string) bool {
 
+	regexpAddRsp := regexp.MustCompile(`\s*add\s*rsp, [0-9]+$`)
+
 	if strings.Contains(line, "vzeroupper") {
 		return true
 	} else if strings.Contains(line, "pop") {
+		return true
+	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 0 {
 		return true
 	}
 

@@ -2,19 +2,21 @@ package main
 
 import (
 	"bufio"
+	"encoding/hex"
+	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strings"
-	"flag"
 	"os/exec"
+	"regexp"
+	"strings"
 )
 
 var (
-	assembleFlag = flag.Bool("a", false,  "Immediately invoke asm2plan9s")
-	stripFlag = flag.Bool("s", false,  "Strip comments")
-	compactFlag = flag.Bool("c", false,  "Compact byte codes")
-	formatFlag = flag.Bool("f", false,  "Format using asmfmt")
+	assembleFlag = flag.Bool("a", false, "Immediately invoke asm2plan9s")
+	stripFlag    = flag.Bool("s", false, "Strip comments")
+	compactFlag  = flag.Bool("c", false, "Compact byte codes")
+	formatFlag   = flag.Bool("f", false, "Format using asmfmt")
 )
 
 // readLines reads a whole file into memory
@@ -126,7 +128,99 @@ func stripComments(file string) {
 	if err != nil {
 		log.Fatalf("writeLines: %s", err)
 	}
+}
 
+func reverseBytes(hex string) string {
+
+	result := ""
+	for i := len(hex) - 2; i >= 0; i -= 2 {
+		result = result + hex[i:i+2]
+	}
+	return result
+}
+
+func compactArray(opcodes []byte) []string {
+
+	var result []string
+
+	dst := make([]byte, hex.EncodedLen(len(opcodes)))
+	hex.Encode(dst, opcodes)
+
+	q := 0
+	for ; q+31 < len(dst); q += 32 {
+		result = append(result, fmt.Sprintf("    QUAD $0x%s; QUAD $0x%s", reverseBytes(string(dst[q:q+16])), reverseBytes(string(dst[q+16:q+32]))))
+	}
+	for ; q+15 < len(dst); q += 16 {
+		result = append(result, fmt.Sprintf("    QUAD $0x%s", reverseBytes(string(dst[q:q+16]))))
+	}
+	if q < len(dst) {
+		last := ""
+		l := 0
+		if q+7 < len(dst) {
+			last += fmt.Sprintf("LONG $0x%s", reverseBytes(string(dst[q:q+8])))
+			l = 8
+		}
+		w := 0
+		if q+l+3 < len(dst) {
+			if len(last) > 0 {
+				last = last + "; "
+			}
+			last += fmt.Sprintf("WORD $0x%s", reverseBytes(string(dst[q+l:q+l+4])))
+			w = 4
+		}
+		if q+l+w+1 < len(dst) {
+			if len(last) > 0 {
+				last = last + "; "
+			}
+			last += fmt.Sprintf("BYTE $0x%s", dst[q+l+w:q+l+w+2])
+		}
+		result = append(result, "    "+last)
+	}
+
+	return result
+}
+
+func compactOpcodes(file string) {
+
+	lines, err := readLines(file)
+	if err != nil {
+		log.Fatalf("readLines: %s", err)
+	}
+
+	var result []string
+
+	opcodes := make([]byte, 0, 1000)
+
+	hexMatch := regexp.MustCompile(`(\$0x[0-9a-f]+)`)
+
+	for _, l := range lines {
+		if strings.Contains(l, "LONG") || strings.Contains(l, "WORD") || strings.Contains(l, "BYTE") {
+			match := hexMatch.FindAllStringSubmatch(l, -1)
+			for _, m := range match {
+				dst := make([]byte, hex.DecodedLen(len(m[0][3:])))
+				_, err := hex.Decode(dst, []byte(m[0][3:]))
+				if err != nil {
+					log.Fatal(err)
+				}
+				for i := len(dst) - 1; i >= 0; i -= 1 { // append starting with lowest byte first
+					opcodes = append(opcodes, dst[i:i+1]...)
+				}
+			}
+		} else {
+
+			if len(opcodes) != 0 {
+				result = append(result, compactArray(opcodes)...)
+				opcodes = opcodes[:0]
+			}
+
+			result = append(result, l)
+		}
+	}
+
+	err = writeLines(result, file, false)
+	if err != nil {
+		log.Fatalf("writeLines: %s", err)
+	}
 }
 
 func main() {
@@ -178,6 +272,10 @@ func main() {
 
 	if *stripFlag {
 		stripComments(assemblyFile)
+	}
+
+	if *compactFlag {
+		compactOpcodes(assemblyFile)
 	}
 
 	if *formatFlag {

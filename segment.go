@@ -120,7 +120,7 @@ func SegmentSource(src []string) []Segment {
 			// Found closing ret statement, start searching back to first non closing statement
 			i := 1
 			for ; index-i >= 0; i++ {
-				if !IsStdCallEpilogue(src[index-i]) {
+				if !IsEpilogueInstruction(src[index-i]) {
 					break
 				}
 			}

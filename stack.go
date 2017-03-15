@@ -26,25 +26,40 @@ func ExtractStackInfo(epilogue []string) Stack {
 	// Iterate over epilogue, starting from last instruction
 	for ipost := len(epilogue) - 1; ipost >= 0; ipost-- {
 		line := epilogue[ipost]
-		if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
-			register := match[1]
 
-			stack.Pushes = append(stack.Pushes, register)
-			stack.SetRbpIns = register == "rbp"
-		} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
-			stack.StackSize, _ = strconv.Atoi(match[1])
-		} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
-			stack.AlignedStack = true
-		} else if strings.Contains(line, "vzeroupper") {
-			stack.VZeroUpper = true
-		} else if strings.Contains(line, "ret") {
-			// no action to take
-		} else {
+		if !ExtractEpilogue(line, &stack) {
 			panic(fmt.Sprintf("Unknown line for epilogue: %s", line))
 		}
 	}
 
 	return stack
+}
+
+func ExtractEpilogue(line string, stack *Stack) bool {
+
+	if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
+		register := match[1]
+
+		stack.Pushes = append(stack.Pushes, register)
+		stack.SetRbpIns = register == "rbp"
+	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
+		stack.StackSize, _ = strconv.Atoi(match[1])
+	} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
+		stack.AlignedStack = true
+	} else if strings.Contains(line, "vzeroupper") {
+		stack.VZeroUpper = true
+	} else if strings.Contains(line, "ret") {
+		// no action to take
+	} else {
+		return false
+	}
+
+	return true
+}
+
+func IsEpilogueInstruction(line string) bool {
+
+	return ExtractEpilogue(line, &Stack{})
 }
 
 func (s *Stack) IsStdCallPrologue(line string) bool {
@@ -87,15 +102,3 @@ func (s *Stack) IsStdCallPrologue(line string) bool {
 	return false
 }
 
-func IsStdCallEpilogue(line string) bool {
-
-	if strings.Contains(line, "vzeroupper") {
-		return true
-	} else if strings.Contains(line, "pop") {
-		return true
-	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 0 {
-		return true
-	}
-
-	return false
-}

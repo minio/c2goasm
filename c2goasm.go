@@ -6,6 +6,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"flag"
+	"os/exec"
+)
+
+var (
+	assembleFlag = flag.Bool("a", false,  "Immediately invoke asm2plan9s")
+	stripFlag = flag.Bool("s", false,  "Strip comments")
+	compactFlag = flag.Bool("c", false,  "Compact byte codes")
 )
 
 // readLines reads a whole file into memory
@@ -99,23 +107,27 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 func main() {
 
-	if len(os.Args) < 3 {
+	flag.Parse()
+
+	if flag.NArg() < 2 {
 		fmt.Printf("error: not enough input files specified\n\n")
 		fmt.Println("usage: c2goasm /path/to/c-project/build/SomeGreatCode.cpp.s SomeGreatCode_amd64.s")
 		return
 	}
-	if !strings.HasSuffix(os.Args[2], ".s") {
-		fmt.Printf("error: second parameter should have '.s' extension\n")
+	assemblyFile := flag.Arg(1)
+	if !strings.HasSuffix(assemblyFile, ".s") {
+		fmt.Printf("error: second parameter must have '.s' extension\n")
 		return
 	}
-	goCompanion := os.Args[2][:len(os.Args[2])-2] + ".go"
+
+	goCompanion := assemblyFile[:len(assemblyFile)-2] + ".go"
 	if _, err := os.Stat(goCompanion); os.IsNotExist(err) {
 		fmt.Printf("error: companion '.go' file is missing for %s\n", os.Args[2])
 		return
 	}
 
-	fmt.Println("Processing", os.Args[1])
-	lines, err := readLines(os.Args[1])
+	fmt.Println("Processing", flag.Arg(0))
+	lines, err := readLines(flag.Arg(0))
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
@@ -126,8 +138,18 @@ func main() {
 		os.Exit(-1)
 	}
 
-	err = writeLines(result, os.Args[2])
+	err = writeLines(result, assemblyFile)
 	if err != nil {
 		log.Fatalf("writeLines: %s", err)
 	}
+
+	if *assembleFlag {
+		fmt.Println("Invoking asm2plan9s on", assemblyFile)
+		cmd := exec.Command("asm2plan9s", assemblyFile)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Fatalf("asm2plan9s: %v", err)
+		}
+	}
+
 }

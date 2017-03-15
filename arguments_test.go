@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func testArguments(t *testing.T, source string, expected int) {
+func testArguments(t *testing.T, source string, expected StackArgs) {
 
 	argsOnStack := ArgumentsOnStack(strings.Split(source, "\n"))
 
@@ -23,7 +23,7 @@ func TestArguments(t *testing.T) {
      vmovups       ymmword ptr [rcx], ymm1
     `
 
-	testArguments(t, nostackargs, 0)
+	testArguments(t, nostackargs, StackArgs{Number: 0, OffsetToFirst: -1})
 
 	arguments7 := `
 	 mov rax, qword [rbp + 16]
@@ -36,7 +36,7 @@ func TestArguments(t *testing.T) {
 	 vmovups     [rax], ymm1
 	`
 
-	testArguments(t, arguments7, 1)
+	testArguments(t, arguments7, StackArgs{Number: 1, OffsetToFirst: 16})
 
 	arguments8 := `
 	 mov r10, qword [rbp + 24]
@@ -51,32 +51,7 @@ func TestArguments(t *testing.T) {
 	 vmovups     [r10], ymm1
 	`
 
-	testArguments(t, arguments8, 2)
-
-	//	golang8 := `
-	//    MOVQ arg1+0(FP), DI
-	//    MOVQ arg2+8(FP), SI
-	//    MOVQ arg3+16(FP), DX
-	//    MOVQ arg4+24(FP), CX
-	//    MOVQ arg5+32(FP), R8
-	//    MOVQ arg6+40(FP), R9
-	//    MOVQ arg7+48(FP), AX
-	//    MOVQ arg8+56(FP), R10
-	//
-	//	map rbp + 16 --> 48(FP)
-	//	map rbp + 24 --> 56(FP)
-	//
-	//	 // mov r10, qword [rbp + 24]
-	//	 // mov rax, qword [rbp + 16]
-	//	 // vmovups     ymm0, [rdi]
-	//	 // vmovups     ymm1, [rsi]
-	//	 // vmovups     ymm2, [rcx]
-	//	 // vmovups     ymm3, [r9]
-	//	 // vfmadd213ps ymm1, ymm0, [rdx]
-	//	 // vfmadd213ps ymm1, ymm2, [r8]
-	//	 // vfmadd213ps ymm1, ymm3, [rax]
-	//	 // vmovups     [r10], ymm1
-	//	`
+	testArguments(t, arguments8, StackArgs{Number: 2, OffsetToFirst: 16})
 
 	arguments9 := `
 	 mov r10, qword [rbp + 32]
@@ -93,7 +68,7 @@ func TestArguments(t *testing.T) {
 	 vmovups     [r10], ymm1
 	`
 
-	testArguments(t, arguments9, 3)
+	testArguments(t, arguments9, StackArgs{Number: 3, OffsetToFirst: 16})
 
 	arguments10 := `
 	 mov r10, qword [rbp + 40]
@@ -112,7 +87,7 @@ func TestArguments(t *testing.T) {
 	 vmovups     [r10], ymm1
 	`
 
-	testArguments(t, arguments10, 4)
+	testArguments(t, arguments10, StackArgs{Number: 4, OffsetToFirst: 16})
 
 	shiftbilinear := `
 	 mov r15, rsi
@@ -137,7 +112,7 @@ func TestArguments(t *testing.T) {
 	 lea rdx, [rbp - 72]
 	`
 
-	testArguments(t, shiftbilinear, 9)
+	testArguments(t, shiftbilinear, StackArgs{Number: 9, OffsetToFirst: 16})
 
 	//	shiftbilinear_rsp := `
 	//	mov	rbp, rsp

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
-	"regexp"
 )
 
 type Stack struct {
@@ -28,10 +28,9 @@ func ExtractStackInfo(epilogue []string) Stack {
 		line := epilogue[ipost]
 		if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
 			register := match[1]
+
 			stack.Pushes = append(stack.Pushes, register)
-			if register == "rbp" {
-				stack.SetRbpIns = true
-			}
+			stack.SetRbpIns = register == "rbp"
 		} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
 			stack.StackSize, _ = strconv.Atoi(match[1])
 		} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
@@ -41,7 +40,7 @@ func ExtractStackInfo(epilogue []string) Stack {
 		} else if strings.Contains(line, "ret") {
 			// no action to take
 		} else {
-			panic(fmt.Sprintf("Unknown line for postamble: %s", line))
+			panic(fmt.Sprintf("Unknown line for epilogue: %s", line))
 		}
 	}
 

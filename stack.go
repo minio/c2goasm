@@ -15,41 +15,27 @@ type Stack struct {
 	VZeroUpper   bool
 }
 
-func ExtractStackInfo(postamble []string) Stack {
+var regexpAddRsp = regexp.MustCompile(`^\s*add\s*rsp, ([0-9]+)$`)
+var regexpLeaRsp = regexp.MustCompile(`^\s*lea\s*rsp, `)
+var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
+
+func ExtractStackInfo(epilogue []string) Stack {
 
 	stack := Stack{}
 
-	// Iterate over postable, starting from last instruction
-	for ipost := len(postamble) - 1; ipost >= 0; ipost-- {
-		line := postamble[ipost]
-		if strings.Contains(line, "pop") {
-			parts := strings.SplitN(line, "pop", 2)
-			register := strings.TrimSpace(parts[1])
-
+	// Iterate over epilogue, starting from last instruction
+	for ipost := len(epilogue) - 1; ipost >= 0; ipost-- {
+		line := epilogue[ipost]
+		if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
+			register := match[1]
 			stack.Pushes = append(stack.Pushes, register)
 			if register == "rbp" {
 				stack.SetRbpIns = true
 			}
-		} else if strings.Contains(line, "add") {
-			parts := strings.SplitN(line, "add", 2)
-			argument := parts[1]
-			args := strings.SplitN(argument, ",", 2)
-
-			if strings.TrimSpace(args[0]) == "rsp" {
-				stack.StackSize, _ = strconv.Atoi(strings.TrimSpace(args[1]))
-			} else {
-				panic(fmt.Sprintf("Unexpected add statement for postamble: %s", line))
-			}
-		} else if strings.Contains(line, "lea") {
-			parts := strings.SplitN(line, "lea", 2)
-			argument := parts[1]
-			args := strings.SplitN(argument, ",", 2)
-
-			if strings.TrimSpace(args[0]) == "rsp" {
-				stack.AlignedStack = true
-			} else {
-				panic(fmt.Sprintf("Unexpected add statement for postamble: %s", line))
-			}
+		} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
+			stack.StackSize, _ = strconv.Atoi(match[1])
+		} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
+			stack.AlignedStack = true
 		} else if strings.Contains(line, "vzeroupper") {
 			stack.VZeroUpper = true
 		} else if strings.Contains(line, "ret") {
@@ -103,8 +89,6 @@ func (s *Stack) IsStdCallPrologue(line string) bool {
 }
 
 func IsStdCallEpilogue(line string) bool {
-
-	regexpAddRsp := regexp.MustCompile(`\s*add\s*rsp, [0-9]+$`)
 
 	if strings.Contains(line, "vzeroupper") {
 		return true

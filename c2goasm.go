@@ -14,6 +14,7 @@ var (
 	assembleFlag = flag.Bool("a", false,  "Immediately invoke asm2plan9s")
 	stripFlag = flag.Bool("s", false,  "Strip comments")
 	compactFlag = flag.Bool("c", false,  "Compact byte codes")
+	formatFlag = flag.Bool("f", false,  "Format using asmfmt")
 )
 
 // readLines reads a whole file into memory
@@ -177,4 +178,11 @@ func main() {
 		stripComments(assemblyFile)
 	}
 
+	if *formatFlag {
+		cmd := exec.Command("asmfmt", "-w", assemblyFile)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Fatalf("asmfmt: %v", err)
+		}
+	}
 }

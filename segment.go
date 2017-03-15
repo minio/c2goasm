@@ -79,10 +79,16 @@ func SegmentSource(src []string) []Segment {
 
 	entryGatherUntilRet := -1
 
+	instructions := true
+
 	// Find start of subroutines
 	for index, line := range src {
 
-		if strings.Contains(line, "## @") {
+		if strings.Contains(line, ".section") {
+			instructions = strings.Contains(line, "pure_instructions")
+		}
+
+		if instructions && strings.Contains(line, "## @") {
 			entryName := ExtractName(strings.Split(line, "## @")[1])
 
 			for _, s := range segments {
@@ -122,7 +128,6 @@ func SegmentSource(src []string) []Segment {
 
 			stackLines := src[index-i+1 : index+1]
 
-			fmt.Println(stackLines)
 			segments[entryGatherUntilRet].stack = ExtractStackInfo(stackLines)
 
 			entryGatherUntilRet = -1

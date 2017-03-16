@@ -10,7 +10,6 @@ TEXT ·_MaddMemcpy(SB), 7, $0
 	MOVQ arg5+32(FP), R8
 	MOVQ arg6+40(FP), R9
 	SUBQ $8, SP
-	BYTE $0x50                     // push    rax
 	WORD $0x894d; BYTE $0xce       // mov    r14, r9
 	WORD $0x8945; BYTE $0xc7       // mov    r15d, r8d
 	WORD $0x8949; BYTE $0xd4       // mov    r12, rdx

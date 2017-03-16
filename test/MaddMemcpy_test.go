@@ -23,7 +23,7 @@ func TestMaddMemcpy(t *testing.T) {
 		if i < 6 {
 			expected = f1[i]*f1[i]+f1[i]
 		} else if i < 7 {
-			expected = f1[i]*f1[i]+f3[i]
+			expected = f1[i]*f2[i]+f1[i]
 		} else {
 			expected = f1[i]*f2[i]+f3[i]
 		}

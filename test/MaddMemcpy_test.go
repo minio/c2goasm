@@ -19,7 +19,7 @@ func TestMaddMemcpy(t *testing.T) {
 	f4 := MaddMemcpy(&f1, &f2, &f3, 6*4, 7*4)
 
 	for i := 0; i < 8; i++ {
-		expected := float64(0)
+		expected := float32(0)
 		if i < 6 {
 			expected = f1[i]*f1[i]+f1[i]
 		} else if i < 7 {

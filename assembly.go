@@ -10,6 +10,7 @@ import (
 
 const returnAddrOnStack = 8
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
+var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 
 // Write the prologue for the subroutine
 func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
@@ -96,14 +97,8 @@ func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArg
 			continue
 		}
 
-		// Make jmps uppercase
-		if parts := strings.SplitN(line, `LBB`, 2); len(parts) > 1 {
-			// unless it is a label
-			if !strings.Contains(parts[1], ":") {
-				// make jmp statement uppercase
-				line = strings.ToUpper(parts[0]) + "LBB" + parts[1]
-			}
-		}
+		line = upperCaseJumps(line)
+		line = upperCaseCalls(line)
 
 		fields := strings.Fields(line)
 		// Test for any non-jmp instruction (lower case mnemonic)
@@ -155,6 +150,37 @@ func WriteGoasmEpilogue(stack Stack) []string {
 	result = append(result, "    RET")
 
 	return result
+}
+
+// Make jmps uppercase
+func upperCaseJumps(line string) string {
+
+	if parts := strings.SplitN(line, `LBB`, 2); len(parts) > 1 {
+		// unless it is a label
+		if !strings.Contains(parts[1], ":") {
+			// make jmp statement uppercase
+			line = strings.ToUpper(parts[0]) + "LBB" + parts[1]
+		}
+	}
+
+	return line
+}
+
+// Make calls uppercase
+func upperCaseCalls(line string) string {
+
+	// Make 'call' instructions uppercase
+	if match := regexpCall.FindStringSubmatch(line); len(match) > 0 {
+		parts := strings.SplitN(line, `call`, 2)
+
+		// replace c stdlib functions with equivalents
+		if strings.TrimSpace(parts[1]) == "_memcpy" {
+			parts[1] = fmt.Sprintf("clib·%s(SB)", strings.TrimSpace(parts[1]))
+		}
+		line = parts[0] + "CALL " + strings.TrimSpace(parts[1])
+	}
+
+	return line
 }
 
 func isLower(str string) bool {

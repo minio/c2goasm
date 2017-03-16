@@ -137,7 +137,7 @@ func WriteGoasmEpilogue(stack Stack) []string {
 		result = append(result, fmt.Sprintf("    MOVQ -8(SP), SP"))
 	} else {
 		if stack.StackSize != 0 {
-			result = append(result, fmt.Sprintf("    ADD $%d, SP", stack.StackSize))
+			result = append(result, fmt.Sprintf("    ADDQ $%d, SP", stack.StackSize))
 		}
 	}
 

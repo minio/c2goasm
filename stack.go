@@ -16,8 +16,12 @@ type Stack struct {
 }
 
 var regexpAddRsp = regexp.MustCompile(`^\s*add\s*rsp, ([0-9]+)$`)
+var regexpAndRsp = regexp.MustCompile(`^\s*and\s*rsp, ([\-0-9]+)$`)
+var regexpSubRsp = regexp.MustCompile(`^\s*sub\s*rsp, ([0-9]+)$`)
 var regexpLeaRsp = regexp.MustCompile(`^\s*lea\s*rsp, `)
 var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
+var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
+var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
 func ExtractStackInfo(epilogue []string) Stack {
 
@@ -27,7 +31,7 @@ func ExtractStackInfo(epilogue []string) Stack {
 	for ipost := len(epilogue) - 1; ipost >= 0; ipost-- {
 		line := epilogue[ipost]
 
-		if !ExtractEpilogue(line, &stack) {
+		if !stack.ExtractEpilogue(line) {
 			panic(fmt.Sprintf("Unknown line for epilogue: %s", line))
 		}
 	}
@@ -35,13 +39,15 @@ func ExtractStackInfo(epilogue []string) Stack {
 	return stack
 }
 
-func ExtractEpilogue(line string, stack *Stack) bool {
+func (stack *Stack) ExtractEpilogue(line string) bool {
 
 	if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
 		register := match[1]
 
 		stack.Pushes = append(stack.Pushes, register)
-		stack.SetRbpIns = register == "rbp"
+		if register == "rbp" {
+			stack.SetRbpIns = true
+		}
 	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
 		stack.StackSize, _ = strconv.Atoi(match[1])
 	} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
@@ -59,46 +65,42 @@ func ExtractEpilogue(line string, stack *Stack) bool {
 
 func IsEpilogueInstruction(line string) bool {
 
-	return ExtractEpilogue(line, &Stack{})
+	return (&Stack{}).ExtractEpilogue(line)
 }
 
-func (s *Stack) IsStdCallPrologue(line string) bool {
+func (s *Stack) IsPrologueInstruction(line string) bool {
 
-	if strings.Contains(line, "push") {
-		parts := strings.SplitN(line, "push", 2)
-		fmt.Println("push:", parts[1])
-		return true
-	} else if strings.Contains(line, "mov") {
-		parts := strings.SplitN(line, "mov", 2)
-		argument := parts[1]
-		args := strings.SplitN(argument, ",", 2)
-		if strings.TrimSpace(args[0]) == "rbp" && strings.TrimSpace(args[1]) == "rsp" {
-			if s.SetRbpIns {
-				return true
-			} else {
-				panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
-			}
+	if match := regexpPush.FindStringSubmatch(line); len(match) > 1 {
+		return listContains(match[1], s.Pushes)
+	} else if match := regexpMov.FindStringSubmatch(line); len(match) > 2 && match[1] == "rbp" && match[2] == "rsp" {
+		if s.SetRbpIns {
+			return true
 		} else {
-			return false
+			panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
 		}
-	} else if strings.Contains(line, "sub") {
-		parts := strings.SplitN(line, "sub", 2)
-		argument := parts[1]
-		args := strings.SplitN(argument, ",", 2)
-		if strings.TrimSpace(args[0]) == "rsp" {
-			space, _ := strconv.Atoi(strings.TrimSpace(args[1]))
-			if !s.AlignedStack && s.StackSize == space {
-				return true
-			} else {
-				panic(fmt.Sprintf("'sub rsp' found but not for fixed stack size: %s", line))
-			}
+	} else if match := regexpAndRsp.FindStringSubmatch(line); len(match) > 1 {
+		return true
+	} else if match := regexpSubRsp.FindStringSubmatch(line); len(match) > 1 { // strings.Contains(line, "sub") {
+		space, _ := strconv.Atoi(match[1])
+		if !s.AlignedStack && s.StackSize == space {
+			return true
+		} else if s.AlignedStack && s.StackSize == 0 {
+			return true
 		} else {
-			return false
+			panic(fmt.Sprintf("'sub rsp' found but in unexpected scenario: %s", line))
 		}
 	} else {
-		panic(fmt.Sprintf("Unknown line for IsStdCallHeader: %s", line))
+		panic(fmt.Sprintf("Unknown line for IsPrologueInstruction: %s", line))
 	}
 
 	return false
 }
 
+func listContains(value string, list []string) bool {
+	for _, v := range list {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}

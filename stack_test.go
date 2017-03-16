@@ -19,43 +19,53 @@ func equalString(a, b []string) bool {
 	return true
 }
 
-func testStack(t *testing.T, epilogue string, expected Stack) {
+func testStack(t *testing.T, prologue, epilogue string, expected Stack) {
 	stack := ExtractStackInfo(strings.Split(epilogue, "\n"))
 
 	if stack.StackSize != expected.StackSize || stack.AlignedStack != expected.AlignedStack ||
-	   stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pushes, expected.Pushes) {
+	   stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pushes, expected.Pushes) ||
+	   stack.SetRbpIns != expected.SetRbpIns {
 		t.Errorf("testStack(): \nexpected %s\ngot      %s", expected, stack)
+	}
+
+	for _, line := range strings.Split(prologue, "\n") {
+		isPrologue := stack.IsPrologueInstruction(line)
+		if !isPrologue {
+			t.Errorf("testStack(): \nexpected %s\ngot      %s", true, isPrologue)
+		}
 	}
 }
 
 func TestStacks(t *testing.T) {
 
-	//   push    rbp
-	//   mov     rbp, rsp
-	epilogue1 := Stack{SetRbpIns: true, VZeroUpper: true}
-	epilogue1.Pushes = append(epilogue1.Pushes, "rbp")
+	prologue1 := `	   push    rbp
+	   mov     rbp, rsp`
 
-	prologue1 := `	    pop     rbp
+	stack1 := Stack{SetRbpIns: true, VZeroUpper: true}
+	stack1.Pushes = append(stack1.Pushes, "rbp")
+
+	epilogue1 := `	    pop     rbp
 	    vzeroupper
 	    ret`
 
-	testStack(t, prologue1, epilogue1)
+	testStack(t, prologue1, epilogue1, stack1)
 
 	/***********************************************************************************/
 
-	epilogue2 := Stack{SetRbpIns: true, AlignedStack: true}
-	epilogue2.Pushes = append(epilogue2.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	prologue2 := `	   push    rbp
+	   mov     rbp, rsp
+	   push    r15
+	   push    r14
+	   push    r13
+	   push    r12
+	   push    rbx
+	   and     rsp, -32
+	   sub     rsp, 864`
 
-	//   push    rbp
-	//   mov     rbp, rsp
-	//   push    r15
-	//   push    r14
-	//   push    r13
-	//   push    r12
-	//   push    rbx
-	//   and     rsp, -32
-	//   sub     rsp, 864
-	prologue2 := `        lea     rsp, [rbp - 40]
+	stack2 := Stack{SetRbpIns: true, AlignedStack: true}
+	stack2.Pushes = append(stack2.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+
+	epilogue2 := `        lea     rsp, [rbp - 40]
         pop     rbx
         pop     r12
         pop     r13
@@ -63,41 +73,43 @@ func TestStacks(t *testing.T) {
         pop     r15
         pop     rbp`
 
-	testStack(t, prologue2, epilogue2)
+	testStack(t, prologue2, epilogue2, stack2)
 
 	/***********************************************************************************/
 
-	//   push    rbp
-	//   mov     rbp, rsp
-	//   push    r15
-	//   push    r14
-	//   push    r13
-	//   push    r12
-	//   push    rbx
-	epilogue3 := Stack{SetRbpIns: true}
-	epilogue3.Pushes = append(epilogue3.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	prologue3 := `push    rbp
+	   mov     rbp, rsp
+	   push    r15
+	   push    r14
+	   push    r13
+	   push    r12
+	   push    rbx`
 
-	prologue3 := `        pop     rbx
+	stack3 := Stack{SetRbpIns: true}
+	stack3.Pushes = append(stack3.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+
+	epilogue3 := `        pop     rbx
         pop     r12
         pop     r13
         pop     r14
         pop     r15
         pop     rbp`
 
-	testStack(t, prologue3, epilogue3)
+	testStack(t, prologue3, epilogue3, stack3)
 
 	/***********************************************************************************/
 
-	//   push    rbp
-	//   mov     rbp, rsp
-	//   push    r15
-	//   push    r14
-	//   push    r13
-	//   push    r12
-	//   push    rbx
-	//   sub     rsp, 152`
-	prologue4 := Stack{SetRbpIns: true, StackSize: 152}
-	prologue4.Pushes = append(prologue4.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	prologue4 := `push    rbp
+	   mov     rbp, rsp
+	   push    r15
+	   push    r14
+	   push    r13
+	   push    r12
+	   push    rbx
+	   sub     rsp, 152`
+
+	stack4 := Stack{SetRbpIns: true, StackSize: 152}
+	stack4.Pushes = append(stack4.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue4 := `        add     rsp, 152
         pop     rbx
@@ -107,21 +119,22 @@ func TestStacks(t *testing.T) {
         pop     r15
         pop     rbp`
 
-	testStack(t, epilogue4, prologue4)
+	testStack(t, prologue4, epilogue4, stack4)
 
 	/***********************************************************************************/
 
-	//   push    rbp
-	//   mov     rbp, rsp
-	//   push    r15
-	//   push    r14
-	//   push    r13
-	//   push    r12
-	//   push    rbx
-	//   and     rsp, -32
-	//   sub     rsp, 192`
-	prologue5 := Stack{SetRbpIns: true, AlignedStack: true, VZeroUpper: true}
-	prologue5.Pushes = append(prologue5.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	prologue5 := `push    rbp
+	   mov     rbp, rsp
+	   push    r15
+	   push    r14
+	   push    r13
+	   push    r12
+	   push    rbx
+	   and     rsp, -32
+	   sub     rsp, 192`
+
+	stack5 := Stack{SetRbpIns: true, AlignedStack: true, VZeroUpper: true}
+	stack5.Pushes = append(stack5.Pushes, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue5 := `        lea     rsp, [rbp - 40]
         pop     rbx
@@ -133,5 +146,5 @@ func TestStacks(t *testing.T) {
         vzeroupper
         ret`
 
-	testStack(t, epilogue5, prologue5)
+	testStack(t, prologue5, epilogue5, stack5)
 }

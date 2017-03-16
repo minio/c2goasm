@@ -82,7 +82,7 @@ func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArg
 
 		if eatHeader {
 
-			if stack.IsStdCallPrologue(line) {
+			if stack.IsPrologueInstruction(line) {
 				fmt.Println("SKIPPING:", line)
 				continue
 			} else {

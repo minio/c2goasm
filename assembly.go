@@ -46,12 +46,12 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 	if segment.stack.AlignedStack {
 		// Aligned stack as required (zeroing out lower order bits), create space, and save original stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-		result = append(result, fmt.Sprintf("    AND $%d, SP", 32))
-		result = append(result, fmt.Sprintf("    SUB $%d, SP", segment.stack.StackSize))
+		result = append(result, fmt.Sprintf("    ANDQ $%d, SP", 32))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.stack.StackSize))
 		result = append(result, fmt.Sprintf("    MOVQ BP, -8(SP)"))
 	} else if segment.stack.StackSize != 0 {
 		// Unaligned stack, simply create space as required
-		result = append(result, fmt.Sprintf("    SUB $%d, SP", segment.stack.StackSize))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.stack.StackSize))
 	}
 
 	if table.IsPresent() {

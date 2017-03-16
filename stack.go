@@ -8,7 +8,7 @@ import (
 )
 
 type Stack struct {
-	Pushes       []string
+	Pops         []string
 	SetRbpIns    bool
 	StackSize    int
 	AlignedStack bool
@@ -44,7 +44,7 @@ func (stack *Stack) ExtractEpilogue(line string) bool {
 	if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
 		register := match[1]
 
-		stack.Pushes = append(stack.Pushes, register)
+		stack.Pops = append(stack.Pops, register)
 		if register == "rbp" {
 			stack.SetRbpIns = true
 		}
@@ -71,7 +71,16 @@ func IsEpilogueInstruction(line string) bool {
 func (s *Stack) IsPrologueInstruction(line string) bool {
 
 	if match := regexpPush.FindStringSubmatch(line); len(match) > 1 {
-		return listContains(match[1], s.Pushes)
+		hasCorrespondingPop := listContains(match[1], s.Pops)
+		if hasCorrespondingPop {
+			return true
+		} else if !hasCorrespondingPop && s.StackSize >= 8 {
+			// Could not find a corresponding `pop` but rsp is modified directly (see test-case pro/epilogue6)
+			s.StackSize -= 8
+			return true
+		} else {
+			return false
+		}
 	} else if match := regexpMov.FindStringSubmatch(line); len(match) > 2 && match[1] == "rbp" && match[2] == "rsp" {
 		if s.SetRbpIns {
 			return true

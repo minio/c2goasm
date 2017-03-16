@@ -59,9 +59,6 @@ func writeLines(lines []string, path string, header bool) error {
 func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 	// TODO
-	// strip header
-	// add golang header
-	// consistent use of rbp & rsp
 	// test for absence of CALLs
 
 	// Get one segment per function

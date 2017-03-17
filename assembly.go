@@ -66,11 +66,10 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 	return result
 }
 
-func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArgs) ([]string, error) {
+func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs) ([]string, error) {
 
 	var result []string
 
-	eatHeader := true
 	for _, line := range lines {
 
 		// Remove ## comments
@@ -79,17 +78,6 @@ func WriteGoasmBody(lines []string, table Table, stack Stack, stackArgs StackArg
 				continue
 			}
 			line = parts[0]
-		}
-
-		if eatHeader {
-
-			if stack.IsPrologueInstruction(line) {
-				fmt.Println("SKIPPING:", line)
-				continue
-			} else {
-				// We are done with removing the std call header
-				eatHeader = false
-			}
 		}
 
 		// Skip lines with aligns

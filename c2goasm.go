@@ -85,11 +85,14 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 			result = append(result, "") // append empty line
 		}
 
+		// Remove prologue lines from subroutine
+		s.Start += SegmentEatPrologue(assembly[s.Start:s.End], &s.stack)
+
 		// Write header for subroutine in go assembly
 		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, s.stack, stackArgs)
+		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, stackArgs)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}

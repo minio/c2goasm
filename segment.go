@@ -136,3 +136,25 @@ func SegmentSource(src []string) []Segment {
 
 	return segments
 }
+
+func SegmentEatPrologue(lines []string, stack *Stack) int {
+
+	index, line := 0, ""
+
+	for index, line = range lines {
+
+		// Remove ## comments
+		if parts := strings.SplitN(line, `##`, 2); len(parts) > 1 {
+			if strings.TrimSpace(parts[0]) == "" {
+				continue
+			}
+			line = parts[0]
+		}
+
+		if !stack.IsPrologueInstruction(line) {
+			break
+		}
+	}
+
+	return index
+}

@@ -114,3 +114,8 @@ Additional arguments to aid in assembly generation
 ## Tested compilers
 
 - clang on OSX
+
+## Resources
+
+- https://github.com/golang/go/files/447163/GoFunctionsInAssembly.pdf
+- https://godbolt.org/

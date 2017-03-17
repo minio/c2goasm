@@ -9,7 +9,6 @@ TEXT ·_MaddMemcpy(SB), 7, $0
 	MOVQ arg4+24(FP), CX
 	MOVQ arg5+32(FP), R8
 	MOVQ arg6+40(FP), R9
-	SUBQ $8, SP
 	WORD $0x894d; BYTE $0xce       // mov    r14, r9
 	WORD $0x8945; BYTE $0xc7       // mov    r15d, r8d
 	WORD $0x8949; BYTE $0xd4       // mov    r12, rdx
@@ -27,6 +26,5 @@ TEXT ·_MaddMemcpy(SB), 7, $0
 	LONG $0x107cc1c4; WORD $0x004d // vmovups    ymm1, [r13]
 	LONG $0xa87dc2c4; WORD $0x240c // vfmadd213ps    ymm1, ymm0, [r12]
 	LONG $0x117cc1c4; BYTE $0x0e   // vmovups    [r14], ymm1
-	ADDQ $8, SP
 	VZEROUPPER
 	RET

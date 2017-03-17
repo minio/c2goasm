@@ -89,7 +89,7 @@ func (s *Stack) IsPrologueInstruction(line string) bool {
 		}
 	} else if match := regexpAndRsp.FindStringSubmatch(line); len(match) > 1 {
 		return true
-	} else if match := regexpSubRsp.FindStringSubmatch(line); len(match) > 1 { // strings.Contains(line, "sub") {
+	} else if match := regexpSubRsp.FindStringSubmatch(line); len(match) > 1 {
 		space, _ := strconv.Atoi(match[1])
 		if !s.AlignedStack && s.StackSize == space {
 			return true
@@ -98,8 +98,6 @@ func (s *Stack) IsPrologueInstruction(line string) bool {
 		} else {
 			panic(fmt.Sprintf("'sub rsp' found but in unexpected scenario: %s", line))
 		}
-	} else {
-		panic(fmt.Sprintf("Unknown line for IsPrologueInstruction: %s", line))
 	}
 
 	return false

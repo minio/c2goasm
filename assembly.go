@@ -106,6 +106,7 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs) ([]string,
 		}
 
 		line = fixRbpPlusLoad(line, stackArgs)
+		line = fixRbpMinusMemoryAccess(line)
 
 		result = append(result, line)
 	}
@@ -248,7 +249,8 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs) string {
 	return line
 }
 
-// Fix loads from '[rbp - constant]
-func fixRbpMinusLower() string {
-	return ""
+// Fix memory accesses in the form of '[rbp - constant]'
+func fixRbpMinusMemoryAccess(line string) string {
+
+	return line
 }

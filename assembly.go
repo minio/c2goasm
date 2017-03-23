@@ -101,6 +101,7 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs) ([]string,
 		line = removeUndefined(line, "# NOREX")
 
 		line = fixShiftInstructions(line)
+		line = fixMovabsInstructions(line)
 		if table.IsPresent() {
 			line = fixPicLabels(line, table)
 		}
@@ -228,6 +229,16 @@ func fixShiftInstructions(line string) string {
 
 	line = fixShiftNoArgument(line, "shr")
 	line = fixShiftNoArgument(line, "sar")
+
+	return line
+}
+
+func fixMovabsInstructions(line string) string {
+
+	if strings.Contains(line, "movabs") {
+		parts := strings.SplitN(line, "movabs", 2)
+		line = parts[0] + "mov" + parts[1]
+	}
 
 	return line
 }

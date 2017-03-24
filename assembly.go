@@ -259,7 +259,7 @@ func fixMovabsInstructions(line string) string {
 // Remap to rsp/stack pointer and load from golang stack
 func fixRbpPlusLoad(line string, stackArgs StackArgs) string {
 
-	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]$`)
+	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])

@@ -14,12 +14,10 @@ type StackArgs struct {
 
 func ArgumentsOnStack(lines []string) StackArgs {
 
-	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]$`)
-
 	offsets := make(map[uint]bool)
 
 	for _, l := range lines {
-
+		l, _ = stripComments(l)
 		if match := regexpRbpLoadHigher.FindStringSubmatch(l); len(match) > 1 {
 			offset, _ := strconv.Atoi(match[1])
 			if _, found := offsets[uint(offset)]; !found {

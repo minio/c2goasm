@@ -11,6 +11,8 @@ import (
 const returnAddrOnStack = 8
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
+var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
+var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 
 // Write the prologue for the subroutine
 func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
@@ -258,8 +260,6 @@ func fixMovabsInstructions(line string) string {
 // These are load instructions for stack-based arguments that occur after the first 6 arguments
 // Remap to rsp/stack pointer and load from golang stack
 func fixRbpPlusLoad(line string, stackArgs StackArgs) string {
-
-	regexpRbpLoadHigher := regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])

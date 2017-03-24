@@ -240,7 +240,7 @@ func main() {
 
 	goCompanion := assemblyFile[:len(assemblyFile)-2] + ".go"
 	if _, err := os.Stat(goCompanion); os.IsNotExist(err) {
-		fmt.Printf("error: companion '.go' file is missing for %s\n", os.Args[2])
+		fmt.Printf("error: companion '.go' file is missing for %s\n", flag.Arg(1))
 		return
 	}
 

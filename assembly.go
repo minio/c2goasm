@@ -73,11 +73,10 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs) ([]string,
 	for _, line := range lines {
 
 		// Remove ## comments
-		if parts := strings.SplitN(line, `##`, 2); len(parts) > 1 {
-			if strings.TrimSpace(parts[0]) == "" {
-				continue
-			}
-			line = parts[0]
+		var skipLine bool
+		line, skipLine = stripComments(line)
+		if skipLine {
+			continue
 		}
 
 		// Skip lines with aligns
@@ -140,6 +139,18 @@ func WriteGoasmEpilogue(stack Stack) []string {
 	result = append(result, "    RET")
 
 	return result
+}
+
+// Strip comments from assembly lines
+func stripComments(line string) (string, bool) {
+
+	if parts := strings.SplitN(line, `##`, 2); len(parts) > 1 {
+		if strings.TrimSpace(parts[0]) == "" {
+			return line, true
+		}
+		line = parts[0]
+	}
+	return line, false
 }
 
 // Make jmps uppercase

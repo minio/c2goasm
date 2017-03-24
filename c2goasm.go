@@ -70,7 +70,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	// Iterate over all subroutines
 	for isegment, s := range segments {
 
-		golangArgs := GetGolangArgs(goCompanionFile, s.Name)
+		golangArgs := ParseCompanionFile(goCompanionFile, s.Name)
 		stackArgs := ArgumentsOnStack(assembly[s.Start:s.End])
 		if golangArgs > 6 && golangArgs-6 != stackArgs.Number {
 			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, stackArgs.Number))

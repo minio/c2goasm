@@ -35,24 +35,34 @@ func ArgumentsOnStack(lines []string) StackArgs {
 	return StackArgs{Number: len(offsets), OffsetToFirst: int(offset)}
 }
 
-func GetGolangArgs(goCompanion, protoName string) int {
+func ParseCompanionFile(goCompanion, protoName string) int {
 
 	gocode, err := readLines(goCompanion)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to read companion go code: %v", err))
 	}
 
-	regexpFuncAndArgs := regexp.MustCompile(`func\s+(.*)\((.*)\)`)
+	for _, goline := range gocode {
 
-	for _, g := range gocode {
-
-		// Search for name of function and arguments
-		if match := regexpFuncAndArgs.FindStringSubmatch(g); len(match) > 2 {
-			if match[1] == "_" + protoName {
-				return len(strings.Split(match[2], ","))
-			}
+		ok, args := GetGolangArgs(protoName, goline)
+		if ok {
+			return args
 		}
 	}
 
 	panic(fmt.Sprintf("Failed to find function prototype for %s", protoName))
+}
+
+var regexpFuncAndArgs = regexp.MustCompile(`func\s+(.*)\((.*)\)`)
+
+func GetGolangArgs(protoName, goline string) (bool, int) {
+
+	// Search for name of function and arguments
+	if match := regexpFuncAndArgs.FindStringSubmatch(goline); len(match) > 2 {
+		if match[1] == "_" + protoName {
+			return true, len(strings.Split(match[2], ","))
+		}
+	}
+
+	return false, 0
 }

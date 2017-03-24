@@ -110,7 +110,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	return result, nil
 }
 
-func stripComments(file string) {
+func stripGoasmComments(file string) {
 
 	lines, err := readLines(file)
 	if err != nil {
@@ -271,7 +271,7 @@ func main() {
 	}
 
 	if *stripFlag {
-		stripComments(assemblyFile)
+		stripGoasmComments(assemblyFile)
 	}
 
 	if *compactFlag {

@@ -62,6 +62,11 @@ func DefineTable(constants []string, tableName string) Table {
 			for len(bytes)%align != 0 {
 				bytes = append(bytes, 0)
 			}
+		} else if strings.Contains(line, ".zero") {
+			length, _ := strconv.Atoi(strings.Fields(line)[1])
+			for i := 0; i < length; i++ {
+				bytes = append(bytes, byte(0))
+			}
 		} else if strings.Contains(line, ".space") {
 			argument := strings.Fields(line)[1]
 			args := strings.Split(argument, ",")

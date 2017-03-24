@@ -169,4 +169,48 @@ DATA LCTABLE<>+0x038(SB)/8, $0x0002000200020002
 GLOBL LCTABLE<>(SB), 8, $64`
 
 	testConstant(t, constant3, table3)
+
+	constant4 := `.LCPI1_0:
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+.LCPI1_2:
+	.quad	281474976776192         # 0x1000000010000
+	.quad	281474976776192         # 0x1000000010000
+.LCPI1_3:
+	.short	1606                    # 0x646
+	.short	4211                    # 0x1073
+	.short	1606                    # 0x646
+	.short	4211                    # 0x1073
+	.short	1606                    # 0x646
+	.short	4211                    # 0x1073
+	.short	1606                    # 0x646
+	.short	4211                    # 0x1073
+.LCPI1_12:
+	.zero	16`
+
+	table4 := `DATA LCTABLE<>+0x000(SB)/8, $0x00ff00ff00ff00ff
+DATA LCTABLE<>+0x008(SB)/8, $0x00ff00ff00ff00ff
+DATA LCTABLE<>+0x010(SB)/8, $0x0001000000010000
+DATA LCTABLE<>+0x018(SB)/8, $0x0001000000010000
+DATA LCTABLE<>+0x020(SB)/8, $0x1073064610730646
+DATA LCTABLE<>+0x028(SB)/8, $0x1073064610730646
+DATA LCTABLE<>+0x030(SB)/8, $0x0000000000000000
+DATA LCTABLE<>+0x038(SB)/8, $0x0000000000000000
+GLOBL LCTABLE<>(SB), 8, $64`
+
+	testConstant(t, constant4, table4)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"regexp"
 )
 
 type Table struct {
@@ -80,6 +81,8 @@ func DefineTable(constants []string, tableName string) Table {
 			}
 		} else if strings.Contains(line, ".section") {
 			// ignore
+		} else if strings.Contains(line, ".text") {
+			// ignore
 		} else {
 			panic(fmt.Sprintf("Unknown line for table: %s", line))
 		}
@@ -105,29 +108,52 @@ func DefineTable(constants []string, tableName string) Table {
 	return Table{Name: tableName, Constants: strings.Join(table, "\n"), Labels: labels}
 }
 
+func SplitOnGlobals(lines []string) []int {
+
+	var result []int
+
+	for index, line := range lines {
+		if strings.Contains(line, ".globl") {
+			result = append(result, index)
+		}
+	}
+
+	return result
+}
+
+var regexpLabelConstant = regexp.MustCompile(`^\.?LCPI[0-9]+_0:`)
+
+func GetFirstLabelConstants(lines []string) int {
+
+	for iline, line := range lines {
+		if match := regexpLabelConstant.FindStringSubmatch(line); len(match) > 0 {
+			return iline
+		}
+	}
+
+	return -1
+}
+
 func SegmentConsts(lines []string) []Table {
 
 	consts := []Segment{}
 
-	searchNextSection := false
-	for index, line := range lines {
+	globals := SplitOnGlobals(lines)
 
-		if !searchNextSection && (strings.Contains(line, "__const") || strings.Contains(line, "__literal8") || strings.Contains(line, "__literal16")) {
-
-			searchNextSection = true
-			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: index + 1})
-
-		} else if searchNextSection && strings.Contains(line, ".section") && strings.Contains(line, "instructions") {
-
-			searchNextSection = false
-
-			consts[len(consts)-1].End = index
+	splitBegin := 0
+	for _, splitEnd := range globals {
+		start := GetFirstLabelConstants(lines[splitBegin:splitEnd])
+		if start != -1 {
+			// Add set of lines when a constant table has been found
+			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: splitBegin + start, End: splitEnd})
 		}
+		splitBegin = splitEnd + 1
 	}
 
 	tables := []Table{}
 
 	for _, c := range consts {
+
 		tables = append(tables, DefineTable(lines[c.Start:c.End], c.Name))
 	}
 

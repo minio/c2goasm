@@ -10,7 +10,7 @@ func testArguments(t *testing.T, source string, expected StackArgs) {
 	argsOnStack := ArgumentsOnStack(strings.Split(source, "\n"))
 
 	if argsOnStack != expected {
-		t.Errorf("testArguments(): \nexpected %s\ngot      %s", expected, argsOnStack)
+		t.Errorf("testArguments(): \nexpected %#v\ngot      %#v", expected, argsOnStack)
 	}
 }
 
@@ -172,7 +172,7 @@ func testProto(t *testing.T, protoName, goline string, expected int) {
 	_, args := GetGolangArgs(protoName, goline)
 
 	if args != expected {
-		t.Errorf("testProto(): \nexpected %s\ngot      %s", expected, args)
+		t.Errorf("testProto(): \nexpected %#v\ngot      %#v", expected, args)
 	}
 
 }

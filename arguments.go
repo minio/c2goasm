@@ -27,7 +27,7 @@ func ArgumentsOnStack(lines []string) StackArgs {
 	}
 
 	offset := ^uint(0)
-	for o, _ := range offsets {
+	for o := range offsets {
 		if o < offset {
 			offset = o
 		}
@@ -59,7 +59,7 @@ func GetGolangArgs(protoName, goline string) (bool, int) {
 
 	// Search for name of function and arguments
 	if match := regexpFuncAndArgs.FindStringSubmatch(goline); len(match) > 2 {
-		if match[1] == "_" + protoName {
+		if match[1] == "_"+protoName {
 			return true, len(strings.Split(match[2], ","))
 		}
 	}

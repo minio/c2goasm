@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
-	"regexp"
 )
 
 type Table struct {

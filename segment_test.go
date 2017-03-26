@@ -359,7 +359,7 @@ __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPf
 
 	testSegment(t, strings.Split(src3, "\n"), segments3)
 
-    src4 := `        .section        __TEXT,__text,regular,pure_instructions
+	src4 := `        .section        __TEXT,__text,regular,pure_instructions
         .macosx_version_min 10, 11
         .intel_syntax noprefix
         .globl  __Z22MultiplyAndAddConstantPfS_S_

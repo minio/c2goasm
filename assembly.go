@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"strings"
-	"unicode"
 	"regexp"
 	"strconv"
+	"strings"
+	"unicode"
 )
 
 const returnAddrOnStack = 8
+
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)

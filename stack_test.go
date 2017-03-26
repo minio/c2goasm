@@ -30,8 +30,8 @@ func testStack(t *testing.T, prologue, epilogue string, expected Stack) {
 	}
 
 	if stack.StackSize != expected.StackSize || stack.AlignedStack != expected.AlignedStack ||
-	stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pops, expected.Pops) ||
-	stack.SetRbpIns != expected.SetRbpIns {
+		stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pops, expected.Pops) ||
+		stack.SetRbpIns != expected.SetRbpIns {
 		t.Errorf("testStack(): \nexpected %s\ngot      %s", expected, stack)
 	}
 }
@@ -174,6 +174,5 @@ func TestStacks(t *testing.T) {
 	ret`
 
 	testStack(t, prologue6, epilogue6, stack6)
-
 
 }

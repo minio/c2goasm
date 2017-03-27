@@ -108,19 +108,6 @@ func DefineTable(constants []string, tableName string) Table {
 	return Table{Name: tableName, Constants: strings.Join(table, "\n"), Labels: labels}
 }
 
-func SplitOnGlobals(lines []string) []int {
-
-	var result []int
-
-	for index, line := range lines {
-		if strings.Contains(line, ".globl") {
-			result = append(result, index)
-		}
-	}
-
-	return result
-}
-
 var regexpLabelConstant = regexp.MustCompile(`^\.?LCPI[0-9]+_0:`)
 
 func GetFirstLabelConstants(lines []string) int {
@@ -140,14 +127,18 @@ func SegmentConsts(lines []string) []Table {
 
 	globals := SplitOnGlobals(lines)
 
+	if len(globals) == 0 {
+		return []Table{}
+	}
+
 	splitBegin := 0
-	for _, splitEnd := range globals {
-		start := GetFirstLabelConstants(lines[splitBegin:splitEnd])
+	for _, global := range globals {
+		start := GetFirstLabelConstants(lines[splitBegin:global.dotGlobalLine])
 		if start != -1 {
 			// Add set of lines when a constant table has been found
-			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: splitBegin + start, End: splitEnd})
+			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: splitBegin + start, End: global.dotGlobalLine})
 		}
-		splitBegin = splitEnd + 1
+		splitBegin = global.dotGlobalLine + 1
 	}
 
 	tables := []Table{}

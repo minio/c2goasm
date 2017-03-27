@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 var regexpRet = regexp.MustCompile(`^\s*ret`)
@@ -14,13 +14,32 @@ type Segment struct {
 	stack      Stack
 }
 
-type Exit struct {
-	Name  string
-	End   int
-	stack Stack
+type Global struct {
+	dotGlobalLine   int
+	globalName      string
+	globalLabelLine int
 }
 
-// Segment the soure into multiple routines
+func SplitOnGlobals(lines []string) []Global {
+
+	var result []Global
+
+	for index, line := range lines {
+		if strings.Contains(line, ".globl") {
+
+			scrambled := strings.TrimSpace(strings.Split(line, ".globl")[1])
+			name := ExtractName(scrambled)
+
+			labelLine := findLabel(lines, scrambled)
+
+			result = append(result, Global{dotGlobalLine: index, globalName: name, globalLabelLine: labelLine})
+		}
+	}
+
+	return result
+}
+
+// Segment the source into multiple routines
 func SegmentSource(src []string) []Segment {
 
 	globals := SplitOnGlobals(src)
@@ -31,18 +50,15 @@ func SegmentSource(src []string) []Segment {
 
 	segments := []Segment{}
 
-
-	for splitBegin, g := globals[0], 0; g < len(globals); g++ {
+	splitBegin := globals[0].dotGlobalLine
+	for iglobal, global := range globals {
 		splitEnd := len(src)
-		if g < len(globals) - 1 {
-			splitEnd = globals[g + 1]
+		if iglobal < len(globals)-1 {
+			splitEnd = globals[iglobal+1].dotGlobalLine
 		}
 
-		scrambledName := strings.TrimSpace(strings.Split(src[splitBegin], ".globl")[1])
-		entryName := ExtractName(scrambledName)
-
-		// Search for ret statement from the back
-		for index := splitEnd-1; index >= splitBegin; index-- {
+		// Search for `ret` statement starting from the back
+		for index := splitEnd - 1; index >= splitBegin; index-- {
 			if match := regexpRet.FindStringSubmatch(src[index]); len(match) > 0 {
 
 				// Found closing ret statement, start searching back to first non closing statement
@@ -53,8 +69,7 @@ func SegmentSource(src []string) []Segment {
 					}
 				}
 
-				startLine := splitBegin + findLabel(src[splitBegin:splitEnd], scrambledName) + 1
-				segments = append(segments, Segment{Name: entryName, Start: startLine, End: index - i + 1})
+				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: index - i + 1})
 			}
 		}
 

@@ -416,4 +416,335 @@ __ZL1a:
 	segments4 = append(segments4, Segment{Name: "MultiplyAndAddConstant", Start: 6, End: 13})
 
 	testSegment(t, strings.Split(src4, "\n"), segments4)
+
+	segments5 := []Segment{}
+	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv420p", Start: 35, End: 45})
+	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv422p", Start: 86, End: 96})
+	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv444p", Start: 134, End: 144})
+
+	testSegment(t, strings.Split(srcOsx, "\n"), segments5)
+
+	segments6 := []Segment{}
+	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv420p", Start: 37, End: 43})
+	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv422p", Start: 87, End: 96})
+	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv444p", Start: 137, End: 146})
+
+	testSegment(t, strings.Split(srcClang, "\n"), segments6)
 }
+
+const srcClang =
+`	.text
+	.intel_syntax noprefix
+	.section	.rodata.cst16,"aM",@progbits,16
+	.align	16
+.LCPI0_0:
+	.byte	255                     # 0xff
+.LCPI0_1:
+	.byte	255                     # 0xff
+	.byte	0                       # 0x0
+.LCPI0_2:
+	.quad	281474976776192         # 0x1000000010000
+.LCPI0_3:
+	.short	1606                    # 0x646
+	.short	4211                    # 0x1073
+.LCPI0_4:
+	.short	8258                    # 0x2042
+.LCPI0_5:
+	.short	16                      # 0x10
+.LCPI0_6:
+	.short	2                       # 0x2
+.LCPI0_7:
+	.short	7193                    # 0x1c19
+.LCPI0_8:
+	.short	60768                   # 0xed60
+.LCPI0_9:
+	.short	128                     # 0x80
+.LCPI0_10:
+	.short	64373                   # 0xfb75
+.LCPI0_11:
+	.short	59507                   # 0xe873
+.LCPI0_12:
+	.zero	16
+	.text
+	.globl	_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m
+	.align	16, 0x90
+	.type	_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m,@function
+_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m: # @_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m
+# BB#0:
+	push	rbp
+	push	r15
+	push	r14
+
+.LBB0_24:                               # %_ZN4Simd4Sse213BgraToYuv420pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	add	rsp, 136
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+.Lfunc_end0:
+	.size	_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m, .Lfunc_end0-_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m
+
+	.section	.rodata.cst16,"aM",@progbits,16
+	.align	16
+.LCPI1_0:
+	.byte	255                     # 0xff
+.LCPI1_1:
+	.byte	0                       # 0x0
+.LCPI1_2:
+	.quad	281474976776192         # 0x1000000010000
+.LCPI1_3:
+	.short	4211                    # 0x1073
+.LCPI1_4:
+	.short	8192                    # 0x2000
+.LCPI1_5:
+	.short	16                      # 0x10
+.LCPI1_6:
+	.short	1                       # 0x1
+.LCPI1_7:
+	.short	7193                    # 0x1c19
+.LCPI1_8:
+	.short	60768                   # 0xed60
+.LCPI1_9:
+	.short	128                     # 0x80
+.LCPI1_10:
+	.short	64373                   # 0xfb75
+.LCPI1_11:
+	.short	59507                   # 0xe873
+.LCPI1_12:
+	.zero	16
+	.text
+	.globl	_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m
+	.align	16, 0x90
+	.type	_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m,@function
+_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m: # @_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m
+# BB#0:
+	push	rbp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rbx
+
+.LBB1_20:                               # %_ZN4Simd4Sse213BgraToYuv422pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+.Lfunc_end1:
+	.size	_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m, .Lfunc_end1-_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m
+
+	.section	.rodata.cst16,"aM",@progbits,16
+	.align	16
+.LCPI2_0:
+	.byte	0                       # 0x0
+.LCPI2_1:
+	.byte	255                     # 0xff
+.LCPI2_2:
+	.quad	281474976776192         # 0x1000000010000
+.LCPI2_3:
+	.short	1606                    # 0x646
+.LCPI2_4:
+	.short	8258                    # 0x2042
+.LCPI2_5:
+	.short	16                      # 0x10
+.LCPI2_6:
+	.short	7193                    # 0x1c19
+.LCPI2_7:
+	.short	60768                   # 0xed60
+.LCPI2_8:
+	.short	128                     # 0x80
+.LCPI2_9:
+	.short	64373                   # 0xfb75
+.LCPI2_10:
+	.short	59507                   # 0xe873
+.LCPI2_11:
+	.zero	16
+	.text
+	.globl	_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m
+	.align	16, 0x90
+	.type	_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m,@function
+_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m: # @_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m
+# BB#0:
+	push	rbp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rbx
+
+.LBB2_20:                               # %_ZN4Simd4Sse213BgraToYuv444pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+.Lfunc_end2:
+	.size	_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m, .Lfunc_end2-_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m
+
+
+	.ident	"clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)"
+	.section	".note.GNU-stack","",@progbits`
+
+const srcOsx =
+`	.section	__TEXT,__text,regular,pure_instructions
+	.macosx_version_min 10, 11
+	.intel_syntax noprefix
+	.section	__TEXT,__literal16,16byte_literals
+	.align	4
+LCPI0_0:
+	.byte	255                     ## 0xff
+LCPI0_1:
+	.byte	1                       ## 0x1
+LCPI0_2:
+	.quad	281474976776192         ## 0x1000000010000
+LCPI0_3:
+	.short	1606                    ## 0x646
+LCPI0_4:
+	.short	8258                    ## 0x2042
+LCPI0_5:
+	.short	16                      ## 0x10
+LCPI0_6:
+	.short	2                       ## 0x2
+LCPI0_7:
+	.short	7193                    ## 0x1c19
+LCPI0_8:
+	.short	60768                   ## 0xed60
+LCPI0_9:
+	.short	128                     ## 0x80
+LCPI0_10:
+	.short	64373                   ## 0xfb75
+LCPI0_11:
+	.short	59507                   ## 0xe873
+LCPI0_12:
+	.space	16
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl	__ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m
+	.align	4, 0x90
+__ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m: ## @_ZN4Simd4Sse213BgraToYuv420pEPKhmmmPhmS3_mS3_m
+## BB#0:
+	push	rbp
+	mov	rbp, rsp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rbx
+
+LBB0_24:                                ## %_ZN4Simd4Sse213BgraToYuv420pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	add	rsp, 88
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+
+	.section	__TEXT,__literal16,16byte_literals
+	.align	4
+LCPI1_0:
+	.byte	255                     ## 0xff
+LCPI1_1:
+	.byte	1                       ## 0x1
+LCPI1_2:
+	.quad	281474976776192         ## 0x1000000010000
+LCPI1_3:
+	.short	1606                    ## 0x646
+LCPI1_4:
+	.short	8258                    ## 0x2042
+LCPI1_5:
+	.short	16                      ## 0x10
+LCPI1_6:
+	.short	1                       ## 0x1
+LCPI1_7:
+	.short	7193                    ## 0x1c19
+LCPI1_8:
+	.short	60768                   ## 0xed60
+LCPI1_9:
+	.short	128                     ## 0x80
+LCPI1_10:
+	.short	64373                   ## 0xfb75
+LCPI1_11:
+	.short	59507                   ## 0xe873
+LCPI1_12:
+	.space	16
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl	__ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m
+	.align	4, 0x90
+__ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m: ## @_ZN4Simd4Sse213BgraToYuv422pEPKhmmmPhmS3_mS3_m
+## BB#0:
+	push	rbp
+	mov	rbp, rsp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rbx
+
+LBB1_20:                                ## %_ZN4Simd4Sse213BgraToYuv422pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+
+	.section	__TEXT,__literal16,16byte_literals
+	.align	4
+LCPI2_0:
+	.byte	255                     ## 0xff
+LCPI2_1:
+	.byte	1                       ## 0x1
+LCPI2_2:
+	.quad	281474976776192         ## 0x1000000010000
+LCPI2_3:
+	.short	1606                    ## 0x646
+LCPI2_4:
+	.short	8258                    ## 0x2042
+LCPI2_5:
+	.short	16                      ## 0x10
+LCPI2_6:
+	.short	7193                    ## 0x1c19
+LCPI2_7:
+	.short	60768                   ## 0xed60
+LCPI2_8:
+	.short	128                     ## 0x80
+LCPI2_9:
+	.short	64373                   ## 0xfb75
+LCPI2_10:
+	.short	59507                   ## 0xe873
+LCPI2_11:
+	.space	16
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl	__ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m
+	.align	4, 0x90
+__ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m: ## @_ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m
+## BB#0:
+	push	rbp
+	mov	rbp, rsp
+	push	r15
+	push	r14
+	push	r13
+	push	r12
+	push	rbx
+
+LBB2_20:                                ## %_ZN4Simd4Sse213BgraToYuv444pILb1EEEvPKhmmmPhmS4_mS4_m.exit
+	pop	rbx
+	pop	r12
+	pop	r13
+	pop	r14
+	pop	r15
+	pop	rbp
+	ret
+
+
+.subsections_via_symbols`

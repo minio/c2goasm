@@ -85,12 +85,10 @@ func SegmentEatPrologue(lines []string, stack *Stack) int {
 
 	for index, line = range lines {
 
-		// Remove ## comments
-		if parts := strings.SplitN(line, `##`, 2); len(parts) > 1 {
-			if strings.TrimSpace(parts[0]) == "" {
-				continue
-			}
-			line = parts[0]
+		var skip bool
+		line, skip = stripComments(line) // Remove ## comments
+		if skip {
+			continue
 		}
 
 		if !stack.IsPrologueInstruction(line) {

@@ -14,6 +14,7 @@ var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
 var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
+var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
 func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
@@ -145,13 +146,13 @@ func WriteGoasmEpilogue(stack Stack) []string {
 }
 
 // Strip comments from assembly lines
-func stripComments(line string) (string, bool) {
+func stripComments(line string) (result string, skipLine bool) {
 
-	if parts := strings.SplitN(line, `##`, 2); len(parts) > 1 {
-		if strings.TrimSpace(parts[0]) == "" {
-			return line, true
+	if match := regexpStripComments.FindStringSubmatch(line); len(match) > 0 {
+		line = line[:len(line)-len(match[0])]
+		if line == "" {
+			return "", true
 		}
-		line = parts[0]
 	}
 	return line, false
 }

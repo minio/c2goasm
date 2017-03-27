@@ -28,3 +28,25 @@ func TestRbpPlusLoad(t *testing.T) {
 		}
 	}
 }
+
+func TestStripComments(t *testing.T) {
+
+	stripped, notskip := stripComments(`	mov     qword ptr [rsp + 144], r9 ## 8-byte Spill`)
+	expected := `	mov     qword ptr [rsp + 144], r9`
+	if stripped != expected || notskip {
+		t.Errorf("TestStripComments(): \nexpected %s\ngot %s", expected, stripped)
+	}
+
+	stripped2, notskip2 := stripComments(`	movdqa	xmm3, xmmword ptr [rip + .LCPI2_10] # xmm3 = [59507,8192,59507,8192,59507,8192,59507,8192]`)
+	expected = `	movdqa	xmm3, xmmword ptr [rip + .LCPI2_10]`
+	if stripped2 != expected || notskip2 {
+		t.Errorf("TestStripComments(): \nexpected %s\ngot %s", expected, stripped2)
+	}
+
+	empty, skip := stripComments(`                                        ## =>This Loop Header: Depth=1`)
+	expected = ``
+	if empty != expected || !skip {
+		t.Errorf("TestStripComments(): \nexpected %s\ngot %s", expected, empty)
+	}
+
+}

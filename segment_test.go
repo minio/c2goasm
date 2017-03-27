@@ -5,6 +5,29 @@ import (
 	"testing"
 )
 
+func segmentEqual(a, b []Segment) bool {
+
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if !(a[i].Name == b[i].Name && a[i].Start == b[i].Start && a[i].End == b[i].End) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func testSegment(t *testing.T, fullsrc []string, expected []Segment) {
 	segments := SegmentSource(fullsrc)
 	if !segmentEqual(segments, expected) {

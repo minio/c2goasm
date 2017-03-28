@@ -92,7 +92,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, stackArgs)
+		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, stackArgs, s.epilogue.AlignedStack)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}

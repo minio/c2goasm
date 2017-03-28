@@ -117,20 +117,22 @@ $ make -n SimdAvx2BgraToGray.s
 
 ## Tested compilers
 
+The following compilers have been tested:
+- clang (Apple LLVM version) on OSX/darwin
+- clang on linux
+
 Compiler flags:
 ```
 -O3 -mstackrealign -masm=intel -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -mavx -mfma 
 ```
 
 | Flag                              | Explanation                            |
-|:---------------------------------:| :-------------------------------------:|
+|:----------------------------------| :--------------------------------------|
 | `-mstackrealign`                  | For more explicit stack initialization |
 | `-masm=intel`                     | Use Intel syntax for assembly          |
 | `-fno-asynchronous-unwind-tables` |                                        |
 | `-fno-exceptions -fno-rtti`       |                                        |
 
-- clang (Apple LLVM version) on OSX/darwin
-- clang on linux
 
 ## Resources
 

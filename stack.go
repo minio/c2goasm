@@ -12,6 +12,7 @@ type Epilogue struct {
 	SetRbpIns    bool
 	StackSize    int
 	AlignedStack bool
+	AlignValue   int
 	VZeroUpper   bool
 }
 
@@ -88,12 +89,15 @@ func (e *Epilogue) IsPrologueInstruction(line string) bool {
 			panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
 		}
 	} else if match := regexpAndRsp.FindStringSubmatch(line); len(match) > 1 {
+		align, _ := strconv.Atoi(match[1])
+		e.AlignValue = align
 		return true
 	} else if match := regexpSubRsp.FindStringSubmatch(line); len(match) > 1 {
 		space, _ := strconv.Atoi(match[1])
 		if !e.AlignedStack && e.StackSize == space {
 			return true
 		} else if e.AlignedStack && e.StackSize == 0 {
+			e.StackSize = space // Update stack size when found in header (and missing in footer due to `lea` instruction)
 			return true
 		} else {
 			panic(fmt.Sprintf("'sub rsp' found but in unexpected scenario: %s", line))

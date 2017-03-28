@@ -12,6 +12,8 @@ const returnAddrOnStack = 8
 
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
+var regexpLabel = regexp.MustCompile(`^(\.?LBB.*:)`)
+var regexpJumpWithLabel = regexp.MustCompile(`^(\s*j\w*)\s*(\.?LBB.*)`)
 var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
 var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
@@ -90,6 +92,7 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAligned
 			continue
 		}
 
+		line = fixLabels(line)
 		line = upperCaseJumps(line)
 		line = upperCaseCalls(line)
 
@@ -159,15 +162,22 @@ func stripComments(line string) (result string, skipLine bool) {
 	return line, false
 }
 
+// Remove leading `.` from labels
+func fixLabels(line string) string {
+
+	if match := regexpLabel.FindStringSubmatch(line); len(match) > 0 {
+		line = strings.Replace(match[1], ".", "", 1)
+	}
+
+	return line
+}
+
 // Make jmps uppercase
 func upperCaseJumps(line string) string {
 
-	if parts := strings.SplitN(line, `LBB`, 2); len(parts) > 1 {
-		// unless it is a label
-		if !strings.Contains(parts[1], ":") {
-			// make jmp statement uppercase
-			line = strings.ToUpper(parts[0]) + "LBB" + parts[1]
-		}
+	if match := regexpJumpWithLabel.FindStringSubmatch(line); len(match) > 1 {
+		// make jmp statement uppercase
+		line = strings.ToUpper(match[1]) + " " + strings.Replace(match[2], ".", "", 1)
 	}
 
 	return line

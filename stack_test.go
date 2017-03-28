@@ -20,7 +20,7 @@ func equalString(a, b []string) bool {
 }
 
 func testStack(t *testing.T, prologue, epilogue string, expected Stack) {
-	stack := ExtractStackInfo(strings.Split(epilogue, "\n"))
+	stack := ExtractEpilogueInfo(strings.Split(epilogue, "\n"))
 
 	for _, line := range strings.Split(prologue, "\n") {
 		isPrologue := stack.IsPrologueInstruction(line)

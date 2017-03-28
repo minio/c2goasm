@@ -23,7 +23,7 @@ var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
-func ExtractStackInfo(epilogue []string) Stack {
+func ExtractEpilogueInfo(epilogue []string) Stack {
 
 	stack := Stack{}
 

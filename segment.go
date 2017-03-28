@@ -58,18 +58,22 @@ func SegmentSource(src []string) []Segment {
 		}
 
 		// Search for `ret` statement starting from the back
-		for index := splitEnd - 1; index >= splitBegin; index-- {
-			if match := regexpRet.FindStringSubmatch(src[index]); len(match) > 0 {
+		for lineRet := splitEnd - 1; lineRet >= splitBegin; lineRet-- {
+			if match := regexpRet.FindStringSubmatch(src[lineRet]); len(match) > 0 {
 
 				// Found closing ret statement, start searching back to first non closing statement
 				i := 1
-				for ; index-i >= 0; i++ {
-					if !IsEpilogueInstruction(src[index-i]) {
+				for ; lineRet - i >= 0; i++ {
+					if !IsEpilogueInstruction(src[lineRet -i]) {
 						break
 					}
 				}
 
-				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: index - i + 1})
+				epilogueLines := src[lineRet -i+1 : lineRet +1]
+
+				stack := ExtractEpilogueInfo(epilogueLines)
+
+				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: lineRet - i + 1, stack: stack})
 			}
 		}
 

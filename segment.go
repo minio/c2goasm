@@ -11,7 +11,7 @@ var regexpRet = regexp.MustCompile(`^\s*ret`)
 type Segment struct {
 	Name       string
 	Start, End int
-	stack      Stack
+	epilogue   Epilogue
 }
 
 type Global struct {
@@ -71,9 +71,9 @@ func SegmentSource(src []string) []Segment {
 
 				epilogueLines := src[lineRet -i+1 : lineRet +1]
 
-				stack := ExtractEpilogueInfo(epilogueLines)
+				epilogue := ExtractEpilogueInfo(epilogueLines)
 
-				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: lineRet - i + 1, stack: stack})
+				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: lineRet - i + 1, epilogue: epilogue})
 			}
 		}
 
@@ -83,7 +83,7 @@ func SegmentSource(src []string) []Segment {
 	return segments
 }
 
-func SegmentEatPrologue(lines []string, stack *Stack) int {
+func SegmentEatPrologue(lines []string, epilogue *Epilogue) int {
 
 	index, line := 0, ""
 
@@ -95,7 +95,7 @@ func SegmentEatPrologue(lines []string, stack *Stack) int {
 			continue
 		}
 
-		if !stack.IsPrologueInstruction(line) {
+		if !epilogue.IsPrologueInstruction(line) {
 			break
 		}
 	}

@@ -86,7 +86,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		}
 
 		// Remove prologue lines from subroutine
-		s.Start += SegmentEatPrologue(assembly[s.Start:s.End], &s.stack)
+		s.Start += SegmentEatPrologue(assembly[s.Start:s.End], &s.epilogue)
 
 		// Write header for subroutine in go assembly
 		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
@@ -99,7 +99,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		result = append(result, assembly...)
 
 		// Return from subroutine
-		result = append(result, WriteGoasmEpilogue(s.stack)...)
+		result = append(result, WriteGoasmEpilogue(s.epilogue)...)
 
 		if isegment < len(segments)-1 {
 			// Empty lines before next subroutine

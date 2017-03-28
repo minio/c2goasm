@@ -29,7 +29,7 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 	// For the case assembly expects stack based arguments
 	for arg = len(registers); arg < arguments; arg++ {
 		// In case base pointer is used for constants and the offset is non-deterministic
-		if table.IsPresent() && segment.stack.AlignedStack {
+		if table.IsPresent() && segment.epilogue.AlignedStack {
 			// Copy golang arguments to C-style stack
 			result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), DI", arg+1, arg*8))
 			result = append(result, fmt.Sprintf("    MOVQ DI, %d(SP)", -256+(arg-6)*8))
@@ -48,21 +48,21 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 	}
 
 	// Setup the stack pointer
-	if segment.stack.AlignedStack {
+	if segment.epilogue.AlignedStack {
 		// Aligned stack as required (zeroing out lower order bits), create space, and save original stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 		result = append(result, fmt.Sprintf("    ANDQ $%d, SP", 32))
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.stack.StackSize))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.epilogue.StackSize))
 		result = append(result, fmt.Sprintf("    MOVQ BP, -8(SP)"))
-	} else if segment.stack.StackSize != 0 {
+	} else if segment.epilogue.StackSize != 0 {
 		// Unaligned stack, simply create space as required
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.stack.StackSize))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.epilogue.StackSize))
 	}
 
 	if table.IsPresent() {
 		// Setup base pointer for loading constants
 		result = append(result, "", fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name), "")
-	} else if segment.stack.AlignedStack {
+	} else if segment.epilogue.AlignedStack {
 		// Setup base pointer to be able to load stack based arguments
 		result = append(result, "", fmt.Sprintf("    MOVQ SP, BP"), "")
 	}
@@ -119,7 +119,7 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs) ([]string,
 }
 
 // Write the epilogue for the subroutine
-func WriteGoasmEpilogue(stack Stack) []string {
+func WriteGoasmEpilogue(stack Epilogue) []string {
 
 	var result []string
 

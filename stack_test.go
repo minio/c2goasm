@@ -19,7 +19,7 @@ func equalString(a, b []string) bool {
 	return true
 }
 
-func testStack(t *testing.T, prologue, epilogue string, expected Stack) {
+func testStack(t *testing.T, prologue, epilogue string, expected Epilogue) {
 	stack := ExtractEpilogueInfo(strings.Split(epilogue, "\n"))
 
 	for _, line := range strings.Split(prologue, "\n") {
@@ -41,7 +41,7 @@ func TestStacks(t *testing.T) {
 	prologue1 := `	   push    rbp
 	   mov     rbp, rsp`
 
-	stack1 := Stack{SetRbpIns: true, VZeroUpper: true}
+	stack1 := Epilogue{SetRbpIns: true, VZeroUpper: true}
 	stack1.Pops = append(stack1.Pops, "rbp")
 
 	epilogue1 := `	    pop     rbp
@@ -62,7 +62,7 @@ func TestStacks(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 864`
 
-	stack2 := Stack{SetRbpIns: true, AlignedStack: true}
+	stack2 := Epilogue{SetRbpIns: true, AlignedStack: true}
 	stack2.Pops = append(stack2.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue2 := `        lea     rsp, [rbp - 40]
@@ -85,7 +85,7 @@ func TestStacks(t *testing.T) {
 	   push    r12
 	   push    rbx`
 
-	stack3 := Stack{SetRbpIns: true}
+	stack3 := Epilogue{SetRbpIns: true}
 	stack3.Pops = append(stack3.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue3 := `        pop     rbx
@@ -108,7 +108,7 @@ func TestStacks(t *testing.T) {
 	   push    rbx
 	   sub     rsp, 152`
 
-	stack4 := Stack{SetRbpIns: true, StackSize: 152}
+	stack4 := Epilogue{SetRbpIns: true, StackSize: 152}
 	stack4.Pops = append(stack4.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue4 := `        add     rsp, 152
@@ -133,7 +133,7 @@ func TestStacks(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 192`
 
-	stack5 := Stack{SetRbpIns: true, AlignedStack: true, VZeroUpper: true}
+	stack5 := Epilogue{SetRbpIns: true, AlignedStack: true, VZeroUpper: true}
 	stack5.Pops = append(stack5.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue5 := `        lea     rsp, [rbp - 40]
@@ -159,7 +159,7 @@ func TestStacks(t *testing.T) {
 	push	rbx
 	push	rax`
 
-	stack6 := Stack{SetRbpIns: true, VZeroUpper: true}
+	stack6 := Epilogue{SetRbpIns: true, VZeroUpper: true}
 	stack6.Pops = append(stack6.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	// `add rsp, 8` counters the additional `push rax` (there are 7 pushes and 6 pops)

@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func BenchmarkSimdGaussian(b *testing.B) {
+func BenchmarkMultiplyAndAdd(b *testing.B) {
 
 	f1 := [8]float32{}
 	f2 := [8]float32{}
@@ -17,6 +17,6 @@ func BenchmarkSimdGaussian(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		MultiplyAndAdd(f1, f2, f3)
+		MultiplyAndAdd(&f1, &f2, &f3)
 	}
 }

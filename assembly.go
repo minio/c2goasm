@@ -283,5 +283,10 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, argsBelowSP bool) string {
 // Fix memory accesses in the form of '[rbp - constant]'
 func fixRbpMinusMemoryAccess(line string) string {
 
+	if match := regexpRbpLoadLower.FindStringSubmatch(line); len(match) > 1 {
+
+		panic(fmt.Sprintf("Not expected to find [rbp -] based loads: %s", line))
+	}
+
 	return line
 }

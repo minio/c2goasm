@@ -58,9 +58,6 @@ func writeLines(lines []string, path string, header bool) error {
 
 func process(assembly []string, goCompanionFile string) ([]string, error) {
 
-	// TODO
-	// test for absence of CALLs
-
 	// Get one segment per function
 	segments := SegmentSource(assembly)
 	tables := SegmentConsts(assembly)

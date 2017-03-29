@@ -16,10 +16,10 @@ func TestMultiplyAndAdd(t *testing.T) {
 		f3[i] = float32(i * 3)
 	}
 
-	f4 := MultiplyAndAdd(f1, f2, f3)
+	f4 := MultiplyAndAdd(&f1, &f2, &f3)
 
 	for i := 0; i < 8; i++ {
-		expected := f1[i]*f2[i]+f3[i]
+		expected := f1[i]*f2[i] + f3[i]
 		if f4[i] != expected {
 			t.Errorf("TestMultiplyAndAdd(): \nexpected %f\ngot      %f", expected, f4[i])
 		}

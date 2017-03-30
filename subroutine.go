@@ -154,6 +154,7 @@ func getMissingLabels(src []string) map[string]bool {
 
 	for _, line := range src {
 
+		line, _ := stripComments(line)
 		if _, label := fixLabels(line); label != "" {
 			labelMap[label] = true
 		}

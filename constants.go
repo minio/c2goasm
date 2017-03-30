@@ -121,9 +121,14 @@ func getFirstLabelConstants(lines []string) int {
 	return -1
 }
 
+type Const struct {
+	name     string
+	start, end int
+}
+
 func segmentConstTables(lines []string) []Table {
 
-	consts := []Subroutine{}
+	consts := []Const{}
 
 	globals := splitOnGlobals(lines)
 
@@ -136,7 +141,7 @@ func segmentConstTables(lines []string) []Table {
 		start := getFirstLabelConstants(lines[splitBegin:global.dotGlobalLine])
 		if start != -1 {
 			// Add set of lines when a constant table has been found
-			consts = append(consts, Subroutine{name: fmt.Sprintf("LCDATA%d", len(consts)+1), bodyStart: splitBegin + start, bodyEnd: global.dotGlobalLine})
+			consts = append(consts, Const{name: fmt.Sprintf("LCDATA%d", len(consts)+1), start: splitBegin + start, end: global.dotGlobalLine})
 		}
 		splitBegin = global.dotGlobalLine + 1
 	}
@@ -145,7 +150,7 @@ func segmentConstTables(lines []string) []Table {
 
 	for _, c := range consts {
 
-		tables = append(tables, defineTable(lines[c.bodyStart:c.bodyEnd], c.name))
+		tables = append(tables, defineTable(lines[c.start:c.end], c.name))
 	}
 
 	return tables

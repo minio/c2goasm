@@ -24,14 +24,15 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 	var result []string
 
 	// Output definition of subroutine
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", subroutine.name))
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d\n", subroutine.name,
+		subroutine.epilogue.getTotalStackSize(table, arguments), getTotalSizeOfArguments(0, arguments-1)))
 
 	if subroutine.epilogue.AlignedStack {
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 		result = append(result, fmt.Sprintf("    ANDQ $%d, BP", subroutine.epilogue.AlignValue))
 		result = append(result, fmt.Sprintf("    SUBQ $%d, BP", subroutine.epilogue.StackSize))
-		result = append(result, fmt.Sprintf("    MOVQ SP, -8(BP)")) // Save original SP
+		result = append(result, fmt.Sprintf("    MOVQ SP, -%d(BP)", returnAddrOnStack)) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
 		if table.isPresent() {
@@ -39,7 +40,7 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 			for arg := arguments - 1; arg >= len(registers); arg-- {
 				// Copy golang stack based arguments below saved original stack pointer
 				result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), DI", arg+1, arg*8))
-				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", -8+(arguments-arg)*-8))
+				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", -returnAddrOnStack+(arguments-arg)*-8))
 			}
 		}
 	}
@@ -142,7 +143,7 @@ func writeGoasmEpilogue(stack Epilogue) []string {
 	// - for an aligned stack, restore the stack pointer from the stack itself
 	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
 	if stack.AlignedStack {
-		result = append(result, fmt.Sprintf("    MOVQ -8(SP), SP"))
+		result = append(result, fmt.Sprintf("    MOVQ -%d(SP), SP", returnAddrOnStack))
 	} else {
 		if stack.StackSize != 0 {
 			result = append(result, fmt.Sprintf("    ADDQ $%d, SP", stack.StackSize))

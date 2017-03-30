@@ -66,3 +66,8 @@ func getGolangArgs(protoName, goline string) (bool, int) {
 
 	return false, 0
 }
+
+func getTotalSizeOfArguments(argStart, argEnd int) int {
+	// TODO: Test if correct for non 64-bit arguments
+	return (argEnd - argStart + 1)*8
+}

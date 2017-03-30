@@ -25,6 +25,22 @@ var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
+func (e *Epilogue) getTotalStackSize(table Table, arguments int) int {
+	stack := e.StackSize
+	if e.AlignedStack {
+		stack += e.AlignValue
+
+		if table.isPresent() {
+			stack += returnAddrOnStack
+			if arguments > len(registers) {
+				stack += getTotalSizeOfArguments(len(registers), arguments-1)
+			}
+		}
+	}
+
+	return stack
+}
+
 func extractEpilogueInfo(src []string, sliceStart, sliceEnd int) Epilogue {
 
 	epilogue := Epilogue{Start: sliceStart, End: sliceEnd}

@@ -12,7 +12,7 @@ type StackArgs struct {
 	OffsetToFirst int
 }
 
-func ArgumentsOnStack(lines []string) StackArgs {
+func argumentsOnStack(lines []string) StackArgs {
 
 	offsets := make(map[uint]bool)
 
@@ -35,7 +35,7 @@ func ArgumentsOnStack(lines []string) StackArgs {
 	return StackArgs{Number: len(offsets), OffsetToFirst: int(offset)}
 }
 
-func ParseCompanionFile(goCompanion, protoName string) int {
+func parseCompanionFile(goCompanion, protoName string) int {
 
 	gocode, err := readLines(goCompanion)
 	if err != nil {
@@ -44,7 +44,7 @@ func ParseCompanionFile(goCompanion, protoName string) int {
 
 	for _, goline := range gocode {
 
-		ok, args := GetGolangArgs(protoName, goline)
+		ok, args := getGolangArgs(protoName, goline)
 		if ok {
 			return args
 		}
@@ -55,7 +55,7 @@ func ParseCompanionFile(goCompanion, protoName string) int {
 
 var regexpFuncAndArgs = regexp.MustCompile(`func\s+(.*)\((.*)\)`)
 
-func GetGolangArgs(protoName, goline string) (bool, int) {
+func getGolangArgs(protoName, goline string) (bool, int) {
 
 	// Search for name of function and arguments
 	if match := regexpFuncAndArgs.FindStringSubmatch(goline); len(match) > 2 {

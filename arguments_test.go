@@ -7,7 +7,7 @@ import (
 
 func testArguments(t *testing.T, source string, expected StackArgs) {
 
-	argsOnStack := ArgumentsOnStack(strings.Split(source, "\n"))
+	argsOnStack := argumentsOnStack(strings.Split(source, "\n"))
 
 	if argsOnStack != expected {
 		t.Errorf("testArguments(): \nexpected %#v\ngot      %#v", expected, argsOnStack)
@@ -169,7 +169,7 @@ func TestArguments(t *testing.T) {
 
 func testProto(t *testing.T, protoName, goline string, expected int) {
 
-	_, args := GetGolangArgs(protoName, goline)
+	_, args := getGolangArgs(protoName, goline)
 
 	if args != expected {
 		t.Errorf("testProto(): \nexpected %#v\ngot      %#v", expected, args)

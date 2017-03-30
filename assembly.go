@@ -19,22 +19,22 @@ var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
-func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
+func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []string {
 
 	var result []string
 
 	// Output definition of subroutine
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", segment.Name))
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $0\n", subroutine.name))
 
-	if segment.epilogue.AlignedStack {
+	if subroutine.epilogue.AlignedStack {
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-		result = append(result, fmt.Sprintf("    ANDQ $%d, BP", segment.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    SUBQ $%d, BP", segment.epilogue.StackSize))
+		result = append(result, fmt.Sprintf("    ANDQ $%d, BP", subroutine.epilogue.AlignValue))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, BP", subroutine.epilogue.StackSize))
 		result = append(result, fmt.Sprintf("    MOVQ SP, -8(BP)")) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
-		if table.IsPresent() {
+		if table.isPresent() {
 			// For the case assembly expects stack based arguments
 			for arg := arguments - 1; arg >= len(registers); arg-- {
 				// Copy golang stack based arguments below saved original stack pointer
@@ -53,28 +53,28 @@ func WriteGoasmPrologue(segment Segment, arguments int, table Table) []string {
 		}
 	}
 
-	if table.IsPresent() {
+	if table.isPresent() {
 		// Setup base pointer for loading constants
 		result = append(result, "", fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name), "")
-	} else if segment.epilogue.AlignedStack {
+	} else if subroutine.epilogue.AlignedStack {
 		// Setup base pointer to be able to load golang stack based arguments
 		result = append(result, "", fmt.Sprintf("    MOVQ SP, BP"), "")
 	}
 
 	// Setup the stack pointer
-	if segment.epilogue.AlignedStack {
+	if subroutine.epilogue.AlignedStack {
 		// Aligned stack as required (zeroing out lower order bits), and create space
-		result = append(result, fmt.Sprintf("    ANDQ $%d, SP", segment.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.epilogue.StackSize))
-	} else if segment.epilogue.StackSize != 0 {
+		result = append(result, fmt.Sprintf("    ANDQ $%d, SP", subroutine.epilogue.AlignValue))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.StackSize))
+	} else if subroutine.epilogue.StackSize != 0 {
 		// Unaligned stack, simply create space as required
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", segment.epilogue.StackSize))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.StackSize))
 	}
 
 	return result
 }
 
-func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAlignedStack bool) ([]string, error) {
+func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAlignedStack bool) ([]string, error) {
 
 	var result []string
 
@@ -110,11 +110,11 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAligned
 
 		line = fixShiftInstructions(line)
 		line = fixMovabsInstructions(line)
-		if table.IsPresent() {
+		if table.isPresent() {
 			line = fixPicLabels(line, table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, table.IsPresent() && hasAlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, table.isPresent() && hasAlignedStack)
 		line = fixRbpMinusMemoryAccess(line)
 
 		result = append(result, line)
@@ -124,7 +124,7 @@ func WriteGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAligned
 }
 
 // Write the epilogue for the subroutine
-func WriteGoasmEpilogue(stack Epilogue) []string {
+func writeGoasmEpilogue(stack Epilogue) []string {
 
 	var result []string
 
@@ -279,7 +279,7 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, argsBelowSP bool) string {
 		offset, _ := strconv.Atoi(match[1])
 		parts := strings.SplitN(line, "[rbp + ", 2)
 		if argsBelowSP {
-			offset -= (stackArgs.Number + 1 /* space for saved SP */ + stackArgs.OffsetToFirst/8)*8
+			offset -= (stackArgs.Number + 1 /* space for saved SP */ + stackArgs.OffsetToFirst/8) * 8
 			line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 		} else {
 			offset = offset - stackArgs.OffsetToFirst + returnAddrOnStack + 8*len(registers)

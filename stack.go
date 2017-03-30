@@ -24,7 +24,7 @@ var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
-func ExtractEpilogueInfo(epilogueLines []string) Epilogue {
+func extractEpilogueInfo(epilogueLines []string) Epilogue {
 
 	epilogue := Epilogue{}
 
@@ -64,7 +64,7 @@ func (e *Epilogue) ExtractEpilogue(line string) bool {
 	return true
 }
 
-func IsEpilogueInstruction(line string) bool {
+func isEpilogueInstruction(line string) bool {
 
 	return (&Epilogue{}).ExtractEpilogue(line)
 }

@@ -13,7 +13,7 @@ type Table struct {
 	Labels    []Label
 }
 
-func (t *Table) IsPresent() bool {
+func (t *Table) isPresent() bool {
 	return len(t.Labels) > 0
 }
 
@@ -22,7 +22,7 @@ type Label struct {
 	Offset uint
 }
 
-func DefineTable(constants []string, tableName string) Table {
+func defineTable(constants []string, tableName string) Table {
 
 	labels := []Label{}
 	bytes := make([]byte, 0, 1000)
@@ -110,7 +110,7 @@ func DefineTable(constants []string, tableName string) Table {
 
 var regexpLabelConstant = regexp.MustCompile(`^\.?LCPI[0-9]+_0:`)
 
-func GetFirstLabelConstants(lines []string) int {
+func getFirstLabelConstants(lines []string) int {
 
 	for iline, line := range lines {
 		if match := regexpLabelConstant.FindStringSubmatch(line); len(match) > 0 {
@@ -121,11 +121,11 @@ func GetFirstLabelConstants(lines []string) int {
 	return -1
 }
 
-func SegmentConsts(lines []string) []Table {
+func segmentConstTables(lines []string) []Table {
 
-	consts := []Segment{}
+	consts := []Subroutine{}
 
-	globals := SplitOnGlobals(lines)
+	globals := splitOnGlobals(lines)
 
 	if len(globals) == 0 {
 		return []Table{}
@@ -133,10 +133,10 @@ func SegmentConsts(lines []string) []Table {
 
 	splitBegin := 0
 	for _, global := range globals {
-		start := GetFirstLabelConstants(lines[splitBegin:global.dotGlobalLine])
+		start := getFirstLabelConstants(lines[splitBegin:global.dotGlobalLine])
 		if start != -1 {
 			// Add set of lines when a constant table has been found
-			consts = append(consts, Segment{Name: fmt.Sprintf("LCDATA%d", len(consts)+1), Start: splitBegin + start, End: global.dotGlobalLine})
+			consts = append(consts, Subroutine{name: fmt.Sprintf("LCDATA%d", len(consts)+1), bodyStart: splitBegin + start, bodyEnd: global.dotGlobalLine})
 		}
 		splitBegin = global.dotGlobalLine + 1
 	}
@@ -145,13 +145,13 @@ func SegmentConsts(lines []string) []Table {
 
 	for _, c := range consts {
 
-		tables = append(tables, DefineTable(lines[c.Start:c.End], c.Name))
+		tables = append(tables, defineTable(lines[c.bodyStart:c.bodyEnd], c.name))
 	}
 
 	return tables
 }
 
-func GetCorrespondingTable(lines []string, tables []Table) Table {
+func getCorrespondingTable(lines []string, tables []Table) Table {
 
 	concat := strings.Join(lines, "\n")
 

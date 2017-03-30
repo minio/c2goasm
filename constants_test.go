@@ -7,7 +7,7 @@ import (
 
 func testConstant(t *testing.T, constants, expected string) {
 
-	table := DefineTable(strings.Split(constants, "\n"), "LCTABLE")
+	table := defineTable(strings.Split(constants, "\n"), "LCTABLE")
 
 	if table.Constants != expected {
 		t.Errorf("TestConstants(): \nexpected %s\ngot      %s", expected, table.Constants)

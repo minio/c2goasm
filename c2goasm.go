@@ -75,7 +75,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 		// Check for constants table
 		var table Table
-		if table = getCorrespondingTable(assembly[s.bodyStart:s.bodyEnd], tables); table.IsPresent() {
+		if table = getCorrespondingTable(assembly[s.bodyStart:s.bodyEnd], tables); table.isPresent() {
 
 			// Output constants table
 			result = append(result, strings.Split(table.Constants, "\n")...)

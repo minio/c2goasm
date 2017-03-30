@@ -3,17 +3,17 @@ package main
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
 var regexpRet = regexp.MustCompile(`^\s*ret`)
 
-type Segment struct {
-	Name       string
-	Start, End int
-	epilogue   Epilogue
+type Subroutine struct {
+	name               string
+	bodyStart, bodyEnd int
+	epilogue           Epilogue
 }
 
 type Global struct {
@@ -22,7 +22,7 @@ type Global struct {
 	globalLabelLine int
 }
 
-func SplitOnGlobals(lines []string) []Global {
+func splitOnGlobals(lines []string) []Global {
 
 	var result []Global
 
@@ -30,7 +30,7 @@ func SplitOnGlobals(lines []string) []Global {
 		if strings.Contains(line, ".globl") {
 
 			scrambled := strings.TrimSpace(strings.Split(line, ".globl")[1])
-			name := ExtractName(scrambled)
+			name := extractName(scrambled)
 
 			labelLine := findLabel(lines, scrambled)
 
@@ -42,15 +42,15 @@ func SplitOnGlobals(lines []string) []Global {
 }
 
 // Segment the source into multiple routines
-func SegmentSource(src []string) []Segment {
+func segmentSource(src []string) []Subroutine {
 
-	globals := SplitOnGlobals(src)
+	globals := splitOnGlobals(src)
 
 	if len(globals) == 0 {
-		return []Segment{}
+		return []Subroutine{}
 	}
 
-	segments := []Segment{}
+	subroutines := []Subroutine{}
 
 	splitBegin := globals[0].dotGlobalLine
 	for iglobal, global := range globals {
@@ -65,27 +65,27 @@ func SegmentSource(src []string) []Segment {
 
 				// Found closing ret statement, start searching back to first non closing statement
 				i := 1
-				for ; lineRet - i >= 0; i++ {
-					if !IsEpilogueInstruction(src[lineRet -i]) {
+				for ; lineRet-i >= 0; i++ {
+					if !isEpilogueInstruction(src[lineRet-i]) {
 						break
 					}
 				}
 
-				epilogueLines := src[lineRet -i+1 : lineRet +1]
+				epilogueLines := src[lineRet-i+1 : lineRet+1]
 
-				epilogue := ExtractEpilogueInfo(epilogueLines)
+				epilogue := extractEpilogueInfo(epilogueLines)
 
-				segments = append(segments, Segment{Name: global.globalName, Start: global.globalLabelLine + 1, End: lineRet - i + 1, epilogue: epilogue})
+				subroutines = append(subroutines, Subroutine{name: global.globalName, bodyStart: global.globalLabelLine + 1, bodyEnd: lineRet - i + 1, epilogue: epilogue})
 			}
 		}
 
 		splitBegin = splitEnd
 	}
 
-	return segments
+	return subroutines
 }
 
-func SegmentEatPrologue(lines []string, epilogue *Epilogue) int {
+func eatPrologueLines(lines []string, epilogue *Epilogue) int {
 
 	index, line := 0, ""
 
@@ -118,7 +118,7 @@ func findLabel(lines []string, label string) int {
 	panic(fmt.Sprintf("Failed to find label: %s", labelDef))
 }
 
-func extractPart(part string) (int, string) {
+func extractNamePart(part string) (int, string) {
 
 	digits := 0
 	for _, d := range part {
@@ -132,7 +132,7 @@ func extractPart(part string) (int, string) {
 	return digits + length, part[digits:(digits + length)]
 }
 
-func ExtractName(name string) string {
+func extractName(name string) string {
 
 	var parts []string
 
@@ -140,7 +140,7 @@ func ExtractName(name string) string {
 		if unicode.IsDigit(ch) {
 
 			for index < len(name) {
-				size, part := extractPart(name[index:])
+				size, part := extractNamePart(name[index:])
 				if size == 0 {
 					break
 				}

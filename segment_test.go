@@ -6,7 +6,7 @@ import (
 )
 
 func testName(t *testing.T, fullname, expected string) {
-	name := ExtractName(fullname)
+	name := extractName(fullname)
 	if name != expected {
 		t.Errorf("TestNames(): \nexpected %s\ngot      %s", expected, name)
 	}
@@ -21,7 +21,7 @@ func TestNames(t *testing.T) {
 	testName(t, "_ZN4Simd4Avx216AbsDifferenceSumEPKhmS2_mmmPy", "SimdAvx2AbsDifferenceSum")
 }
 
-func segmentEqual(a, b []Segment) bool {
+func subroutineEqual(a, b []Subroutine) bool {
 
 	if a == nil && b == nil {
 		return true
@@ -36,7 +36,7 @@ func segmentEqual(a, b []Segment) bool {
 	}
 
 	for i := range a {
-		if !(a[i].Name == b[i].Name && a[i].Start == b[i].Start && a[i].End == b[i].End) {
+		if !(a[i].name == b[i].name && a[i].bodyStart == b[i].bodyStart && a[i].bodyEnd == b[i].bodyEnd) {
 			return false
 		}
 	}
@@ -44,14 +44,14 @@ func segmentEqual(a, b []Segment) bool {
 	return true
 }
 
-func testSegment(t *testing.T, fullsrc []string, expected []Segment) {
-	segments := SegmentSource(fullsrc)
-	if !segmentEqual(segments, expected) {
-		t.Errorf("TestNames(): \nexpected %#v\ngot      %#v", expected, segments)
+func testSubroutine(t *testing.T, fullsrc []string, expected []Subroutine) {
+	subroutines := segmentSource(fullsrc)
+	if !subroutineEqual(subroutines, expected) {
+		t.Errorf("testSubroutine(): \nexpected %#v\ngot      %#v", expected, subroutines)
 	}
 }
 
-func TestSegment(t *testing.T) {
+func TestSubroutine(t *testing.T) {
 
 	src1 := `	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
@@ -155,10 +155,10 @@ LBB0_15:                                ## %_ZN4Simd4Avx210BgraToGrayILb1EEEvPKh
 .subsections_via_symbols
 `
 
-	segments1 := []Segment{}
-	segments1 = append(segments1, Segment{Name: "SimdAvx2BgraToGray", Start: 22, End: 95})
+	subroutine1 := []Subroutine{}
+	subroutine1 = append(subroutine1, Subroutine{name: "SimdAvx2BgraToGray", bodyStart: 22, bodyEnd: 95})
 
-	testSegment(t, strings.Split(src1, "\n"), segments1)
+	testSubroutine(t, strings.Split(src1, "\n"), subroutine1)
 
 	src2 := `	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
@@ -370,12 +370,12 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 
 .subsections_via_symbols`
 
-	segments2 := []Segment{}
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv444pToBgra", Start: 13, End: 51})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv420pToBgra", Start: 74, End: 111})
-	segments2 = append(segments2, Segment{Name: "SimdAvx2Yuv422pToBgra", Start: 134, End: 198})
+	subroutine2 := []Subroutine{}
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv444pToBgra", bodyStart: 13, bodyEnd: 51})
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv420pToBgra", bodyStart: 74, bodyEnd: 111})
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv422pToBgra", bodyStart: 134, bodyEnd: 198})
 
-	testSegment(t, strings.Split(src2, "\n"), segments2)
+	testSubroutine(t, strings.Split(src2, "\n"), subroutine2)
 
 	src3 := `        .globl  __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
         .align  4, 0x90
@@ -393,10 +393,10 @@ __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPf
 
 .subsections_via_symbols`
 
-	segments3 := []Segment{}
-	segments3 = append(segments3, Segment{Name: "SimdAvx2MultiplyAndAdd", Start: 3, End: 10})
+	subroutine3 := []Subroutine{}
+	subroutine3 = append(subroutine3, Subroutine{name: "SimdAvx2MultiplyAndAdd", bodyStart: 3, bodyEnd: 10})
 
-	testSegment(t, strings.Split(src3, "\n"), segments3)
+	testSubroutine(t, strings.Split(src3, "\n"), subroutine3)
 
 	src4 := `        .section        __TEXT,__text,regular,pure_instructions
         .macosx_version_min 10, 11
@@ -428,28 +428,27 @@ __ZL1a:
         .long   1090519040              ## float 8.000000e+00
 `
 
-	segments4 := []Segment{}
-	segments4 = append(segments4, Segment{Name: "MultiplyAndAddConstant", Start: 6, End: 13})
+	subroutine4 := []Subroutine{}
+	subroutine4 = append(subroutine4, Subroutine{name: "MultiplyAndAddConstant", bodyStart: 6, bodyEnd: 13})
 
-	testSegment(t, strings.Split(src4, "\n"), segments4)
+	testSubroutine(t, strings.Split(src4, "\n"), subroutine4)
 
-	segments5 := []Segment{}
-	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv420p", Start: 35, End: 45})
-	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv422p", Start: 86, End: 96})
-	segments5 = append(segments5, Segment{Name: "SimdSse2BgraToYuv444p", Start: 134, End: 144})
+	subroutine5 := []Subroutine{}
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv420p", bodyStart: 35, bodyEnd: 45})
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv422p", bodyStart: 86, bodyEnd: 96})
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv444p", bodyStart: 134, bodyEnd: 144})
 
-	testSegment(t, strings.Split(srcOsx, "\n"), segments5)
+	testSubroutine(t, strings.Split(srcOsx, "\n"), subroutine5)
 
-	segments6 := []Segment{}
-	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv420p", Start: 37, End: 43})
-	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv422p", Start: 87, End: 96})
-	segments6 = append(segments6, Segment{Name: "SimdSse2BgraToYuv444p", Start: 137, End: 146})
+	subroutine6 := []Subroutine{}
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv420p", bodyStart: 37, bodyEnd: 43})
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv422p", bodyStart: 87, bodyEnd: 96})
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv444p", bodyStart: 137, bodyEnd: 146})
 
-	testSegment(t, strings.Split(srcClang, "\n"), segments6)
+	testSubroutine(t, strings.Split(srcClang, "\n"), subroutine6)
 }
 
-const srcClang =
-`	.text
+const srcClang = `	.text
 	.intel_syntax noprefix
 	.section	.rodata.cst16,"aM",@progbits,16
 	.align	16
@@ -609,8 +608,7 @@ _ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m: # @_ZN4Simd4Sse213BgraToYuv444pE
 	.ident	"clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)"
 	.section	".note.GNU-stack","",@progbits`
 
-const srcOsx =
-`	.section	__TEXT,__text,regular,pure_instructions
+const srcOsx = `	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
 	.intel_syntax noprefix
 	.section	__TEXT,__literal16,16byte_literals

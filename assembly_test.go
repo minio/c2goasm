@@ -21,7 +21,7 @@ func TestRbpPlusLoad(t *testing.T) {
 	stackArgs := StackArgs{OffsetToFirst: 256}
 	for _, test := range strings.Split(tests, "\n") {
 		test, _ = stripComments(test)
-		result := fixRbpPlusLoad(test, stackArgs)
+		result := fixRbpPlusLoad(test, stackArgs, false)
 
 		if !(strings.Contains(result, `/*`) && strings.Contains(result, `*/`)) {
 			t.Errorf("TestRbpPlusLoad(): \nexpected to find C-style comment\ngot %s", result)

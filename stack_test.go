@@ -62,7 +62,7 @@ func TestStacks(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 864`
 
-	stack2 := Epilogue{SetRbpIns: true, AlignedStack: true}
+	stack2 := Epilogue{SetRbpIns: true, StackSize: 864, AlignedStack: true, AlignValue: -32}
 	stack2.Pops = append(stack2.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue2 := `        lea     rsp, [rbp - 40]
@@ -133,7 +133,7 @@ func TestStacks(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 192`
 
-	stack5 := Epilogue{SetRbpIns: true, AlignedStack: true, VZeroUpper: true}
+	stack5 := Epilogue{SetRbpIns: true, StackSize: 192, AlignedStack: true, AlignValue: -32, VZeroUpper: true}
 	stack5.Pops = append(stack5.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	epilogue5 := `        lea     rsp, [rbp - 40]

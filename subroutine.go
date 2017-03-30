@@ -66,6 +66,8 @@ func segmentSource(src []string) []Subroutine {
 				newsub := extractSubroutine(lineRet, src, global)
 
 				subroutines = append(subroutines, newsub)
+				
+				break
 			}
 		}
 

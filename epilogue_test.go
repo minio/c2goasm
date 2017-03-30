@@ -24,7 +24,7 @@ func testEpilogue(t *testing.T, prologue, epilogue string, expected Epilogue) {
 	stack := extractEpilogueInfo(src, 0, len(src))
 
 	for _, line := range strings.Split(prologue, "\n") {
-		isPrologue := stack.IsPrologueInstruction(line)
+		isPrologue := stack.isPrologueInstruction(line)
 		if !isPrologue {
 			t.Errorf("testEpilogue(): \nexpected true\ngot      %#v", isPrologue)
 		}

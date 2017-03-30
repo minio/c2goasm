@@ -70,7 +70,7 @@ func isEpilogueInstruction(line string) bool {
 	return (&Epilogue{}).extractEpilogue(line)
 }
 
-func (e *Epilogue) IsPrologueInstruction(line string) bool {
+func (e *Epilogue) isPrologueInstruction(line string) bool {
 
 	if match := regexpPush.FindStringSubmatch(line); len(match) > 1 {
 		hasCorrespondingPop := listContains(match[1], e.Pops)

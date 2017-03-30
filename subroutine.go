@@ -212,7 +212,7 @@ func getPrologueLines(lines []string, epilogue *Epilogue) int {
 			continue
 		}
 
-		if !epilogue.IsPrologueInstruction(line) {
+		if !epilogue.isPrologueInstruction(line) {
 			break
 		}
 	}

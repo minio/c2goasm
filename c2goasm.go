@@ -58,24 +58,24 @@ func writeLines(lines []string, path string, header bool) error {
 
 func process(assembly []string, goCompanionFile string) ([]string, error) {
 
-	// Get one segment per function
-	segments := SegmentSource(assembly)
-	tables := SegmentConsts(assembly)
+	// Split out the assembly source into subroutines
+	subroutines := segmentSource(assembly)
+	tables := segmentConstTables(assembly)
 
 	var result []string
 
 	// Iterate over all subroutines
-	for isegment, s := range segments {
+	for isubroutine, s := range subroutines {
 
-		golangArgs := ParseCompanionFile(goCompanionFile, s.Name)
-		stackArgs := ArgumentsOnStack(assembly[s.Start:s.End])
+		golangArgs := parseCompanionFile(goCompanionFile, s.name)
+		stackArgs := argumentsOnStack(assembly[s.bodyStart:s.bodyEnd])
 		if golangArgs > 6 && golangArgs-6 != stackArgs.Number {
 			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, stackArgs.Number))
 		}
 
 		// Check for constants table
 		var table Table
-		if table = GetCorrespondingTable(assembly[s.Start:s.End], tables); table.IsPresent() {
+		if table = getCorrespondingTable(assembly[s.bodyStart:s.bodyEnd], tables); table.IsPresent() {
 
 			// Output constants table
 			result = append(result, strings.Split(table.Constants, "\n")...)
@@ -83,22 +83,22 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		}
 
 		// Remove prologue lines from subroutine
-		s.Start += SegmentEatPrologue(assembly[s.Start:s.End], &s.epilogue)
+		s.bodyStart += eatPrologueLines(assembly[s.bodyStart:s.bodyEnd], &s.epilogue)
 
 		// Write header for subroutine in go assembly
-		result = append(result, WriteGoasmPrologue(s, golangArgs, table)...)
+		result = append(result, writeGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := WriteGoasmBody(assembly[s.Start:s.End], table, stackArgs, s.epilogue.AlignedStack)
+		assembly, err := writeGoasmBody(assembly[s.bodyStart:s.bodyEnd], table, stackArgs, s.epilogue.AlignedStack)
 		if err != nil {
 			panic(fmt.Sprintf("assemblify error: %v", err))
 		}
 		result = append(result, assembly...)
 
 		// Return from subroutine
-		result = append(result, WriteGoasmEpilogue(s.epilogue)...)
+		result = append(result, writeGoasmEpilogue(s.epilogue)...)
 
-		if isegment < len(segments)-1 {
+		if isubroutine < len(subroutines)-1 {
 			// Empty lines before next subroutine
 			result = append(result, "\n", "\n")
 		}

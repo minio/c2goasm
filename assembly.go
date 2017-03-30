@@ -74,11 +74,21 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 	return result
 }
 
-func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAlignedStack bool) ([]string, error) {
+func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue ) ([]string, error) {
 
 	var result []string
 
-	for _, line := range lines {
+	for iline, line := range lines {
+
+		// If part of epilogue
+		if iline >= epilogue.Start && iline < epilogue.End {
+
+			// Instead of last line, output go assembly epilogue
+			if iline == epilogue.End - 1 {
+				result = append(result, writeGoasmEpilogue(epilogue)...)
+			}
+			continue
+		}
 
 		// Remove ## comments
 		var skipLine bool
@@ -92,8 +102,8 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAligned
 			continue
 		}
 
-		line = fixLabels(line)
-		line = upperCaseJumps(line)
+		line, _ = fixLabels(line)
+		line, _, _ = upperCaseJumps(line)
 		line = upperCaseCalls(line)
 
 		fields := strings.Fields(line)
@@ -114,7 +124,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, hasAligned
 			line = fixPicLabels(line, table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, table.isPresent() && hasAlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, table.isPresent() && epilogue.AlignedStack)
 		line = fixRbpMinusMemoryAccess(line)
 
 		result = append(result, line)
@@ -163,24 +173,33 @@ func stripComments(line string) (result string, skipLine bool) {
 }
 
 // Remove leading `.` from labels
-func fixLabels(line string) string {
+func fixLabels(line string) (string, string) {
+
+	label := ""
 
 	if match := regexpLabel.FindStringSubmatch(line); len(match) > 0 {
-		line = strings.Replace(match[1], ".", "", 1)
+		label = strings.Replace(match[1], ".", "", 1)
+		line = label
+		label = strings.Replace(label, ":", "", 1)
 	}
 
-	return line
+	return line, label
 }
 
 // Make jmps uppercase
-func upperCaseJumps(line string) string {
+func upperCaseJumps(line string) (string, string, string) {
+
+	instruction, label := "", ""
 
 	if match := regexpJumpWithLabel.FindStringSubmatch(line); len(match) > 1 {
 		// make jmp statement uppercase
-		line = strings.ToUpper(match[1]) + " " + strings.Replace(match[2], ".", "", 1)
+		instruction = strings.ToUpper(match[1])
+		label = strings.Replace(match[2], ".", "", 1)
+		line = instruction + " " + label
+
 	}
 
-	return line
+	return line, strings.TrimSpace(instruction), label
 }
 
 // Make calls uppercase

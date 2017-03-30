@@ -14,6 +14,7 @@ type Epilogue struct {
 	AlignedStack bool
 	AlignValue   int
 	VZeroUpper   bool
+	Start, End   int
 }
 
 var regexpAddRsp = regexp.MustCompile(`^\s*add\s*rsp, ([0-9]+)$`)
@@ -24,15 +25,15 @@ var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
-func extractEpilogueInfo(epilogueLines []string) Epilogue {
+func extractEpilogueInfo(src []string, sliceStart, sliceEnd int) Epilogue {
 
-	epilogue := Epilogue{}
+	epilogue := Epilogue{Start: sliceStart, End: sliceEnd}
 
 	// Iterate over epilogue, starting from last instruction
-	for ipost := len(epilogueLines) - 1; ipost >= 0; ipost-- {
-		line := epilogueLines[ipost]
+	for ipost := sliceEnd - 1; ipost >= sliceStart; ipost-- {
+		line := src[ipost]
 
-		if !epilogue.ExtractEpilogue(line) {
+		if !epilogue.extractEpilogue(line) {
 			panic(fmt.Sprintf("Unknown line for epilogue: %s", line))
 		}
 	}
@@ -40,7 +41,7 @@ func extractEpilogueInfo(epilogueLines []string) Epilogue {
 	return epilogue
 }
 
-func (e *Epilogue) ExtractEpilogue(line string) bool {
+func (e *Epilogue) extractEpilogue(line string) bool {
 
 	if match := regexpPop.FindStringSubmatch(line); len(match) > 1 {
 		register := match[1]
@@ -66,7 +67,7 @@ func (e *Epilogue) ExtractEpilogue(line string) bool {
 
 func isEpilogueInstruction(line string) bool {
 
-	return (&Epilogue{}).ExtractEpilogue(line)
+	return (&Epilogue{}).extractEpilogue(line)
 }
 
 func (e *Epilogue) IsPrologueInstruction(line string) bool {

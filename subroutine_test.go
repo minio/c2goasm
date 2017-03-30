@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"github.com/cloudflare/go/src/fmt"
 )
 
 func testName(t *testing.T, fullname, expected string) {
@@ -36,7 +37,7 @@ func subroutineEqual(a, b []Subroutine) bool {
 	}
 
 	for i := range a {
-		if !(a[i].name == b[i].name && a[i].bodyStart == b[i].bodyStart && a[i].bodyEnd == b[i].bodyEnd) {
+		if !(a[i].name == b[i].name && equalString(a[i].body, b[i].body)) {
 			return false
 		}
 	}
@@ -53,7 +54,9 @@ func testSubroutine(t *testing.T, fullsrc []string, expected []Subroutine) {
 
 func TestSubroutine(t *testing.T) {
 
-	src1 := `	.section	__TEXT,__text,regular,pure_instructions
+	disabledForTesting = true
+
+	src1 := strings.Split(`	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
 	.intel_syntax noprefix
 	.section	__TEXT,__const
@@ -153,14 +156,14 @@ LBB0_15:                                ## %_ZN4Simd4Avx210BgraToGrayILb1EEEvPKh
 	ret
 
 .subsections_via_symbols
-`
+`, "\n")
 
 	subroutine1 := []Subroutine{}
-	subroutine1 = append(subroutine1, Subroutine{name: "SimdAvx2BgraToGray", bodyStart: 22, bodyEnd: 95})
+	subroutine1 = append(subroutine1, Subroutine{name: "SimdAvx2BgraToGray", body: src1[25:98]})
 
-	testSubroutine(t, strings.Split(src1, "\n"), subroutine1)
+	testSubroutine(t, src1, subroutine1)
 
-	src2 := `	.section	__TEXT,__text,regular,pure_instructions
+	src2 := strings.Split(`	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
 	.intel_syntax noprefix
 	.section	__TEXT,__const
@@ -368,16 +371,16 @@ LBB2_20:                                ## %_ZN4Simd4Avx213Yuv422pToBgraILb1EEEv
 	vzeroupper
 	ret
 
-.subsections_via_symbols`
+.subsections_via_symbols`, "\n")
 
 	subroutine2 := []Subroutine{}
-	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv444pToBgra", bodyStart: 13, bodyEnd: 51})
-	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv420pToBgra", bodyStart: 74, bodyEnd: 111})
-	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv422pToBgra", bodyStart: 134, bodyEnd: 198})
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv444pToBgra", body: src2[23:60]})
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv420pToBgra", body: src2[84:120]})
+	subroutine2 = append(subroutine2, Subroutine{name: "SimdAvx2Yuv422pToBgra", body: src2[144:207]})
 
-	testSubroutine(t, strings.Split(src2, "\n"), subroutine2)
+	testSubroutine(t, src2, subroutine2)
 
-	src3 := `        .globl  __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
+	src3 := strings.Split(`        .globl  __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
         .align  4, 0x90
 __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_
 ## BB#0:
@@ -391,14 +394,14 @@ __ZN4Simd4Avx214MultiplyAndAddEPfS1_S1_S1_: ## @_ZN4Simd4Avx214MultiplyAndAddEPf
         vzeroupper
         ret
 
-.subsections_via_symbols`
+.subsections_via_symbols`, "\n")
 
 	subroutine3 := []Subroutine{}
-	subroutine3 = append(subroutine3, Subroutine{name: "SimdAvx2MultiplyAndAdd", bodyStart: 3, bodyEnd: 10})
+	subroutine3 = append(subroutine3, Subroutine{name: "SimdAvx2MultiplyAndAdd", body: src3[6:13]})
 
-	testSubroutine(t, strings.Split(src3, "\n"), subroutine3)
+	testSubroutine(t, src3, subroutine3)
 
-	src4 := `        .section        __TEXT,__text,regular,pure_instructions
+	src4 := strings.Split(`        .section        __TEXT,__text,regular,pure_instructions
         .macosx_version_min 10, 11
         .intel_syntax noprefix
         .globl  __Z22MultiplyAndAddConstantPfS_S_
@@ -426,29 +429,29 @@ __ZL1a:
         .long   1086324736              ## float 6.000000e+00
         .long   1088421888              ## float 7.000000e+00
         .long   1090519040              ## float 8.000000e+00
-`
+`, "\n")
 
 	subroutine4 := []Subroutine{}
-	subroutine4 = append(subroutine4, Subroutine{name: "MultiplyAndAddConstant", bodyStart: 6, bodyEnd: 13})
+	subroutine4 = append(subroutine4, Subroutine{name: "MultiplyAndAddConstant", body: src4[9:16]})
 
-	testSubroutine(t, strings.Split(src4, "\n"), subroutine4)
+	testSubroutine(t, src4, subroutine4)
 
 	subroutine5 := []Subroutine{}
-	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv420p", bodyStart: 35, bodyEnd: 45})
-	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv422p", bodyStart: 86, bodyEnd: 96})
-	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv444p", bodyStart: 134, bodyEnd: 144})
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv420p", body: srcOsx[43:53]})
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv422p", body: srcOsx[94:103]})
+	subroutine5 = append(subroutine5, Subroutine{name: "SimdSse2BgraToYuv444p", body: srcOsx[142:151]})
 
-	testSubroutine(t, strings.Split(srcOsx, "\n"), subroutine5)
+	testSubroutine(t, srcOsx, subroutine5)
 
 	subroutine6 := []Subroutine{}
-	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv420p", bodyStart: 37, bodyEnd: 43})
-	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv422p", bodyStart: 87, bodyEnd: 96})
-	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv444p", bodyStart: 137, bodyEnd: 146})
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv420p", body: srcClang[41:51]})
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv422p", body: srcClang[94:103]})
+	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv444p", body: srcClang[144:153]})
 
-	testSubroutine(t, strings.Split(srcClang, "\n"), subroutine6)
+	testSubroutine(t, srcClang, subroutine6)
 }
 
-const srcClang = `	.text
+var srcClang = strings.Split(`	.text
 	.intel_syntax noprefix
 	.section	.rodata.cst16,"aM",@progbits,16
 	.align	16
@@ -606,9 +609,9 @@ _ZN4Simd4Sse213BgraToYuv444pEPKhmmmPhmS3_mS3_m: # @_ZN4Simd4Sse213BgraToYuv444pE
 
 
 	.ident	"clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)"
-	.section	".note.GNU-stack","",@progbits`
+	.section	".note.GNU-stack","",@progbits`, "\n")
 
-const srcOsx = `	.section	__TEXT,__text,regular,pure_instructions
+var srcOsx = strings.Split(`	.section	__TEXT,__text,regular,pure_instructions
 	.macosx_version_min 10, 11
 	.intel_syntax noprefix
 	.section	__TEXT,__literal16,16byte_literals
@@ -761,4 +764,4 @@ LBB2_20:                                ## %_ZN4Simd4Sse213BgraToYuv444pILb1EEEv
 	ret
 
 
-.subsections_via_symbols`
+.subsections_via_symbols`, "\n")

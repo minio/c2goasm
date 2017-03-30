@@ -11,9 +11,9 @@ import (
 var regexpRet = regexp.MustCompile(`^\s*ret`)
 
 type Subroutine struct {
-	name               string
-	bodyStart, bodyEnd int
-	epilogue           Epilogue
+	name     string
+	body     []string
+	epilogue Epilogue
 }
 
 type Global struct {
@@ -63,19 +63,9 @@ func segmentSource(src []string) []Subroutine {
 		for lineRet := splitEnd - 1; lineRet >= splitBegin; lineRet-- {
 			if match := regexpRet.FindStringSubmatch(src[lineRet]); len(match) > 0 {
 
-				// Found closing ret statement, start searching back to first non closing statement
-				i := 1
-				for ; lineRet-i >= 0; i++ {
-					if !isEpilogueInstruction(src[lineRet-i]) {
-						break
-					}
-				}
+				newsub := extractSubroutine(lineRet, src, global)
 
-				epilogueLines := src[lineRet-i+1 : lineRet+1]
-
-				epilogue := extractEpilogueInfo(epilogueLines)
-
-				subroutines = append(subroutines, Subroutine{name: global.globalName, bodyStart: global.globalLabelLine + 1, bodyEnd: lineRet - i + 1, epilogue: epilogue})
+				subroutines = append(subroutines, newsub)
 			}
 		}
 
@@ -85,7 +75,132 @@ func segmentSource(src []string) []Subroutine {
 	return subroutines
 }
 
-func eatPrologueLines(lines []string, epilogue *Epilogue) int {
+var disabledForTesting = false
+
+func extractSubroutine(lineRet int, src []string, global Global) Subroutine {
+
+	bodyStart := global.globalLabelLine + 1
+	bodyEnd := lineRet + 1
+
+	// loop until all missing labels are found
+	for !disabledForTesting {
+		missingLabels := getMissingLabels(src[bodyStart:bodyEnd])
+
+		if len(missingLabels) == 0 {
+			break
+		}
+
+		// add the missing lines in order to find the missing labels
+		postEpilogueLines := getMissingLines(src, bodyEnd-1, missingLabels)
+
+		bodyEnd += postEpilogueLines
+	}
+
+
+	subroutine := Subroutine{
+		name: global.globalName,
+		body: src[bodyStart:bodyEnd],
+		epilogue: extractEpilogue(src[bodyStart:bodyEnd]),
+	}
+
+	// Remove prologue lines from subroutine
+	subroutine.removePrologueLines(src, bodyStart, bodyEnd)
+
+	return subroutine
+}
+
+func (s *Subroutine) removePrologueLines(src []string, bodyStart int, bodyEnd int)  {
+
+	prologueLines := getPrologueLines(src[bodyStart:bodyEnd], &s.epilogue)
+
+	// Remove prologue lines from body
+	s.body = s.body[prologueLines:]
+
+	// Adjust range of epilogue accordingly
+	s.epilogue.Start -= prologueLines
+	s.epilogue.End -= prologueLines
+}
+
+func extractEpilogue(src []string) Epilogue {
+
+	for iline, line := range src {
+
+		if match := regexpRet.FindStringSubmatch(line); len(match) > 0 {
+
+			// Found closing ret statement, start searching back to first non epilogue instruction
+			epilogueStart := iline
+			for ; epilogueStart >= 0; epilogueStart-- {
+				if !isEpilogueInstruction(src[epilogueStart]) {
+					epilogueStart++
+					break
+				}
+			}
+
+			epilogue := extractEpilogueInfo(src, epilogueStart, iline+1)
+
+			return epilogue
+		}
+	}
+
+	panic("Failed to find 'ret' instruction")
+}
+
+func getMissingLabels(src []string) map[string]bool {
+
+	labelMap := make(map[string]bool)
+	jumpMap := make(map[string]bool)
+
+	for _, line := range src {
+
+		if _, label := fixLabels(line); label != "" {
+			labelMap[label] = true
+		}
+		if _, _, label := upperCaseJumps(line); label != "" {
+			jumpMap[label] = true
+		}
+
+	}
+
+	fmt.Println(labelMap)
+	fmt.Println(jumpMap)
+
+	for label, _ := range labelMap {
+		if _, ok := jumpMap[label]; ok {
+			delete(jumpMap, label)
+		} else {
+			panic("label not found")
+		}
+	}
+
+	return jumpMap
+}
+
+func getMissingLines(src []string, lineRet int, missingLabels map[string]bool) int {
+
+	var iline int
+	// first scan until we've found the missing labels
+	for iline = lineRet; len(missingLabels) > 0 && iline < len(src); iline++ {
+		line := src[iline]
+		_, label := fixLabels(line)
+		if label != "" {
+			if _, ok := missingLabels[label]; ok {
+				delete(missingLabels, label)
+			}
+		}
+	}
+	// then scan until we find an (unconditional) JMP
+	for ; iline < len(src); iline++ {
+		line := src[iline]
+		_, jump, _ := upperCaseJumps(line)
+		if jump == "JMP" {
+			break
+		}
+	}
+
+	return iline - lineRet
+}
+
+func getPrologueLines(lines []string, epilogue *Epilogue) int {
 
 	index, line := 0, ""
 

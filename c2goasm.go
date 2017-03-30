@@ -68,35 +68,29 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	for isubroutine, s := range subroutines {
 
 		golangArgs := parseCompanionFile(goCompanionFile, s.name)
-		stackArgs := argumentsOnStack(assembly[s.bodyStart:s.bodyEnd])
+		stackArgs := argumentsOnStack(s.body)
 		if golangArgs > 6 && golangArgs-6 != stackArgs.Number {
 			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, stackArgs.Number))
 		}
 
 		// Check for constants table
 		var table Table
-		if table = getCorrespondingTable(assembly[s.bodyStart:s.bodyEnd], tables); table.isPresent() {
+		if table = getCorrespondingTable(s.body, tables); table.isPresent() {
 
 			// Output constants table
 			result = append(result, strings.Split(table.Constants, "\n")...)
 			result = append(result, "") // append empty line
 		}
 
-		// Remove prologue lines from subroutine
-		s.bodyStart += eatPrologueLines(assembly[s.bodyStart:s.bodyEnd], &s.epilogue)
-
 		// Write header for subroutine in go assembly
 		result = append(result, writeGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := writeGoasmBody(assembly[s.bodyStart:s.bodyEnd], table, stackArgs, s.epilogue.AlignedStack)
+		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue)
 		if err != nil {
-			panic(fmt.Sprintf("assemblify error: %v", err))
+			panic(fmt.Sprintf("writeGoasmBody: %v", err))
 		}
 		result = append(result, assembly...)
-
-		// Return from subroutine
-		result = append(result, writeGoasmEpilogue(s.epilogue)...)
 
 		if isubroutine < len(subroutines)-1 {
 			// Empty lines before next subroutine

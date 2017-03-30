@@ -20,19 +20,20 @@ func equalString(a, b []string) bool {
 }
 
 func testEpilogue(t *testing.T, prologue, epilogue string, expected Epilogue) {
-	stack := extractEpilogueInfo(strings.Split(epilogue, "\n"))
+	src := strings.Split(epilogue, "\n")
+	stack := extractEpilogueInfo(src, 0, len(src))
 
 	for _, line := range strings.Split(prologue, "\n") {
 		isPrologue := stack.IsPrologueInstruction(line)
 		if !isPrologue {
-			t.Errorf("testStack(): \nexpected true\ngot      %#v", isPrologue)
+			t.Errorf("testEpilogue(): \nexpected true\ngot      %#v", isPrologue)
 		}
 	}
 
 	if stack.StackSize != expected.StackSize || stack.AlignedStack != expected.AlignedStack ||
 		stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pops, expected.Pops) ||
 		stack.SetRbpIns != expected.SetRbpIns {
-		t.Errorf("testStack(): \nexpected %#v\ngot      %#v", expected, stack)
+		t.Errorf("testEpilogue(): \nexpected %#v\ngot      %#v", expected, stack)
 	}
 }
 

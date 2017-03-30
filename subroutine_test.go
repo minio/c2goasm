@@ -3,7 +3,6 @@ package main
 import (
 	"strings"
 	"testing"
-	"github.com/cloudflare/go/src/fmt"
 )
 
 func testName(t *testing.T, fullname, expected string) {

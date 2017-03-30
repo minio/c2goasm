@@ -59,8 +59,8 @@ func segmentSource(src []string) []Subroutine {
 			splitEnd = globals[iglobal+1].dotGlobalLine
 		}
 
-		// Search for `ret` statement starting from the back
-		for lineRet := splitEnd - 1; lineRet >= splitBegin; lineRet-- {
+		// Search for `ret` statement
+		for lineRet := splitBegin; lineRet < splitEnd; lineRet++ {
 			if match := regexpRet.FindStringSubmatch(src[lineRet]); len(match) > 0 {
 
 				newsub := extractSubroutine(lineRet, src, global)
@@ -160,9 +160,6 @@ func getMissingLabels(src []string) map[string]bool {
 		}
 
 	}
-
-	fmt.Println(labelMap)
-	fmt.Println(jumpMap)
 
 	for label, _ := range labelMap {
 		if _, ok := jumpMap[label]; ok {

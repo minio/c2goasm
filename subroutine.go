@@ -167,8 +167,6 @@ func getMissingLabels(src []string) map[string]bool {
 	for label, _ := range labelMap {
 		if _, ok := jumpMap[label]; ok {
 			delete(jumpMap, label)
-		} else {
-			panic("label not found")
 		}
 	}
 

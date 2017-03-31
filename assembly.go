@@ -25,13 +25,15 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 
 	// Output definition of subroutine
 	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d\n", subroutine.name,
-		subroutine.epilogue.getTotalStackSize(table, arguments), getTotalSizeOfArguments(0, arguments-1)))
+		subroutine.epilogue.getTotalStackDepth(table, arguments), getTotalSizeOfArguments(0, arguments-1)))
 
 	if subroutine.epilogue.AlignedStack {
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-		result = append(result, fmt.Sprintf("    ANDQ $%d, BP", subroutine.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    SUBQ $%d, BP", subroutine.epilogue.StackSize))
+		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", subroutine.epilogue.AlignValue))
+		if subroutine.epilogue.StackSize != 0 {
+			result = append(result, fmt.Sprintf("    SUBQ $%d, BP", subroutine.epilogue.StackSize))
+		}
 		result = append(result, fmt.Sprintf("    MOVQ SP, -%d(BP)", returnAddrOnStack)) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
@@ -56,23 +58,23 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 
 	if table.isPresent() {
 		// Setup base pointer for loading constants
-		result = append(result, "", fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name), "")
+		result = append(result, fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name))
 	} else if subroutine.epilogue.AlignedStack {
 		// Setup base pointer to be able to load golang stack based arguments
-		result = append(result, "", fmt.Sprintf("    MOVQ SP, BP"), "")
+		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 	}
 
 	// Setup the stack pointer
 	if subroutine.epilogue.AlignedStack {
 		// Aligned stack as required (zeroing out lower order bits), and create space
-		result = append(result, fmt.Sprintf("    ANDQ $%d, SP", subroutine.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.StackSize))
-	} else if subroutine.epilogue.StackSize != 0 {
-		// Unaligned stack, simply create space as required
+		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", subroutine.epilogue.AlignValue))
+	}
+	if subroutine.epilogue.StackSize != 0 {
+		// Create stack space as needed
 		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.StackSize))
 	}
 
-	return result
+	return append(result, ``)
 }
 
 func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue ) ([]string, error) {

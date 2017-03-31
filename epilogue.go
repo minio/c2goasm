@@ -10,28 +10,28 @@ import (
 type Epilogue struct {
 	Pops         []string
 	SetRbpIns    bool
-	StackSize    int
+	StackSize    uint
 	AlignedStack bool
-	AlignValue   int
+	AlignValue   uint
 	VZeroUpper   bool
 	Start, End   int
 }
 
 var regexpAddRsp = regexp.MustCompile(`^\s*add\s*rsp, ([0-9]+)$`)
-var regexpAndRsp = regexp.MustCompile(`^\s*and\s*rsp, ([\-0-9]+)$`)
+var regexpAndRsp = regexp.MustCompile(`^\s*and\s*rsp, \-([0-9]+)$`)
 var regexpSubRsp = regexp.MustCompile(`^\s*sub\s*rsp, ([0-9]+)$`)
 var regexpLeaRsp = regexp.MustCompile(`^\s*lea\s*rsp, `)
 var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 
-func (e *Epilogue) getTotalStackSize(table Table, arguments int) int {
+func (e *Epilogue) getTotalStackDepth(table Table, arguments int) uint {
 	stack := e.StackSize
 	if e.AlignedStack {
 		stack += e.AlignValue
+		stack += returnAddrOnStack
 
 		if table.isPresent() {
-			stack += returnAddrOnStack
 			if arguments > len(registers) {
 				stack += getTotalSizeOfArguments(len(registers), arguments-1)
 			}
@@ -67,7 +67,8 @@ func (e *Epilogue) extractEpilogue(line string) bool {
 			e.SetRbpIns = true
 		}
 	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
-		e.StackSize, _ = strconv.Atoi(match[1])
+		size, _ := strconv.Atoi(match[1])
+		e.StackSize = uint(size)
 	} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
 		e.AlignedStack = true
 	} else if strings.Contains(line, "vzeroupper") {
@@ -107,14 +108,20 @@ func (e *Epilogue) isPrologueInstruction(line string) bool {
 		}
 	} else if match := regexpAndRsp.FindStringSubmatch(line); len(match) > 1 {
 		align, _ := strconv.Atoi(match[1])
-		e.AlignValue = align
+		if e.AlignedStack && align == 8 {
+			// golang stack is already 8 byte aligned so we can effectively disable the aligned stack
+			e.AlignedStack = false
+		} else {
+			e.AlignValue = uint(align)
+		}
+
 		return true
 	} else if match := regexpSubRsp.FindStringSubmatch(line); len(match) > 1 {
 		space, _ := strconv.Atoi(match[1])
-		if !e.AlignedStack && e.StackSize == space {
+		if !e.AlignedStack && e.StackSize == uint(space) {
 			return true
 		} else if e.AlignedStack && e.StackSize == 0 {
-			e.StackSize = space // Update stack size when found in header (and missing in footer due to `lea` instruction)
+			e.StackSize = uint(space) // Update stack size when found in header (and missing in footer due to `lea` instruction)
 			return true
 		} else {
 			panic(fmt.Sprintf("'sub rsp' found but in unexpected scenario: %s", line))

@@ -69,8 +69,8 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 		golangArgs := parseCompanionFile(goCompanionFile, s.name)
 		stackArgs := argumentsOnStack(s.body)
-		if golangArgs > 6 && golangArgs-6 != stackArgs.Number {
-			panic(fmt.Sprintf("Expected %d arguments on stack but only found %d", golangArgs-6, stackArgs.Number))
+		if golangArgs > 6 && golangArgs-6 < stackArgs.Number {
+			panic(fmt.Sprintf("Found too few arguments on stack (%d) but needed %d", golangArgs-6, stackArgs.Number))
 		}
 
 		// Check for constants table

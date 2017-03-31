@@ -133,7 +133,7 @@ The following compilers have been tested:
 
 Compiler flags:
 ```
--masm=intel -mno-red-zone -mstackrealign -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti
+-masm=intel -mno-red-zone -mstackrealign -mllvm -inline-threshold=1000 -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti
 ```
 
 | Flag                              | Explanation                                        |
@@ -141,6 +141,7 @@ Compiler flags:
 | `-masm=intel`                     | Output Intel syntax for assembly                   |
 | `-mno-red-zone`                   | Do not write below stack pointer (avoid [red zone](https://en.wikipedia.org/wiki/Red_zone_(computing)))  |
 | `-mstackrealign`                  | Use explicit stack initialization                  |
+| `-mllvm -inline-threshold=1000`   | Higher limit for inlining heuristic (default=255)  |
 | `-fno-asynchronous-unwind-tables` | Do not generate unwind tables (for debug purposes) |
 | `-fno-exceptions`                 | Disable exception handling                         |
 | `-fno-rtti`                       | Disable run-time type information                  |
@@ -151,7 +152,7 @@ The following flags are only available in `clang -cc1` frontend mode (see [below
 |:----------------------------------| :------------------------------------------------------------------|
 | `-fno-jump-tables`                | Do not use jump tables as may be generated for `select` statements |
 
-### `clang` vs `clang -cc1` 
+#### `clang` vs `clang -cc1` 
 
 As per the clang [FAQ](https://clang.llvm.org/docs/FAQ.html#driver), `clang -cc1` is the frontend, and `clang` is a (mostly GCC compatible) driver for the frontend. To see all options that the driver passes on to the frontend, use `-###` like this:
 
@@ -160,7 +161,7 @@ $ clang -### -c hello.c
 "/usr/lib/llvm/bin/clang" "-cc1" "-triple" "x86_64-pc-linux-gnu" etc. etc. etc.
 ```
 
-### Command line flags
+#### Command line flags for clang
 
 To see all command line flags use either `clang --help` or `clang --help-hidden` for the clang driver or `clang -cc1 -help` for the frontend.
 

@@ -164,6 +164,13 @@ $ clang -### -c hello.c
 
 To see all command line flags use either `clang --help` or `clang --help-hidden` for the clang driver or `clang -cc1 -help` for the frontend.
 
+#### Further optimization and fine tuning
+
+Using the LLVM optimizer ([opt](http://llvm.org/docs/CommandGuide/opt.html)) you can further optimize the code generation. Use `opt -help` or `opt -help-hidden` for all available options.
+
+An option can be passed in via `clang` using the `-mllvm <value>` option, such as `-mllvm -inline-threshold=1000` as discussed above.
+
+Also LLVM allows you to tune specific functions via [function attributes](http://llvm.org/docs/LangRef.html#function-attributes) like `define void @f() alwaysinline norecurse { ... }`.
 
 ## Resources
 

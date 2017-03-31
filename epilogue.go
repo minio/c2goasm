@@ -120,7 +120,7 @@ func (e *Epilogue) isPrologueInstruction(line string) bool {
 		space, _ := strconv.Atoi(match[1])
 		if !e.AlignedStack && e.StackSize == uint(space) {
 			return true
-		} else if e.AlignedStack && e.StackSize == 0 {
+		} else if e.StackSize == 0 || e.StackSize == uint(space)  {
 			e.StackSize = uint(space) // Update stack size when found in header (and missing in footer due to `lea` instruction)
 			return true
 		} else {

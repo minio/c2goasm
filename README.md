@@ -125,7 +125,7 @@ See actual command
 $ make -n SimdAvx2BgraToGray.s
 ```
 
-## Tested compilers
+## Compatible compilers
 
 The following compilers have been tested:
 - clang (Apple LLVM version) on OSX/darwin
@@ -133,15 +133,23 @@ The following compilers have been tested:
 
 Compiler flags:
 ```
--O3 -mstackrealign -masm=intel -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -mavx -mfma 
+-masm=intel -mno-red-zone -mstackrealign -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti
 ```
 
-| Flag                              | Explanation                            |
-|:----------------------------------| :--------------------------------------|
-| `-mstackrealign`                  | For more explicit stack initialization |
-| `-masm=intel`                     | Use Intel syntax for assembly          |
-| `-fno-asynchronous-unwind-tables` |                                        |
-| `-fno-exceptions -fno-rtti`       |                                        |
+| Flag                              | Explanation                                        |
+|:----------------------------------| :--------------------------------------------------|
+| `-masm=intel`                     | Output Intel syntax for assembly                   |
+| `-mno-red-zone`                   | Do not write below stack pointer (avoid [red zone](https://en.wikipedia.org/wiki/Red_zone_(computing)))  |
+| `-mstackrealign`                  | Use explicit stack initialization                  |
+| `-fno-asynchronous-unwind-tables` | Do not generate unwind tables (for debug purposes) |
+| `-fno-exceptions`                 | Disable exception handling                         |
+| `-fno-rtti`                       | Disable run-time type information                  |
+
+The following flags are only available in `clang -cc1` frontend mode (see [below]()):
+
+| Flag                              | Explanation                                                        |
+|:----------------------------------| :------------------------------------------------------------------|
+| `-fno-jump-tables`                | Do not use jump tables as may be generated for `select` statements |
 
 ### `clang` vs `clang -cc1` 
 

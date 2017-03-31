@@ -317,7 +317,7 @@ func fixRbpMinusMemoryAccess(line string) string {
 
 	if match := regexpRbpLoadLower.FindStringSubmatch(line); len(match) > 1 {
 
-		panic(fmt.Sprintf("Not expected to find [rbp -] based loads: %s", line))
+		panic(fmt.Sprintf("Not expected to find [rbp -] based loads: %s\n\nDid you specify `-mno-red-zone`?\n\n", line))
 	}
 
 	return line

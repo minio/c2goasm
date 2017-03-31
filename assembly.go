@@ -13,6 +13,7 @@ const returnAddrOnStack = 8
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 var regexpLabel = regexp.MustCompile(`^(\.?LBB.*:)`)
+var regexpJumpTableRef = regexp.MustCompile(`\[rip \+ (\.?LJTI[_0-9]*)\]\s*$`)
 var regexpJumpWithLabel = regexp.MustCompile(`^(\s*j\w*)\s*(\.?LBB.*)`)
 var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
 var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
@@ -128,7 +129,9 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 		}
 
 		line = fixRbpPlusLoad(line, stackArgs, table.isPresent() && epilogue.AlignedStack)
-		line = fixRbpMinusMemoryAccess(line)
+
+		detectRbpMinusMemoryAccess(line)
+		detectJumpTable(line)
 
 		result = append(result, line)
 	}
@@ -312,13 +315,19 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, argsBelowSP bool) string {
 	return line
 }
 
-// Fix memory accesses in the form of '[rbp - constant]'
-func fixRbpMinusMemoryAccess(line string) string {
+// Detect memory accesses in the form of '[rbp - constant]'
+func detectRbpMinusMemoryAccess(line string) {
 
 	if match := regexpRbpLoadLower.FindStringSubmatch(line); len(match) > 1 {
 
 		panic(fmt.Sprintf("Not expected to find [rbp -] based loads: %s\n\nDid you specify `-mno-red-zone`?\n\n", line))
 	}
+}
 
-	return line
+// Detect jump tables
+func detectJumpTable(line string) {
+
+	if match := regexpJumpTableRef.FindStringSubmatch(line); len(match) > 0 {
+		panic(fmt.Sprintf("Jump table detected: %s\n\nCircumvent using '-fno-jump-tables', see 'clang -cc1 -help' (version 3.9+)\n\n", match[1]))
+	}
 }

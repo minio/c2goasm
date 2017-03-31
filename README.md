@@ -143,6 +143,19 @@ Compiler flags:
 | `-fno-asynchronous-unwind-tables` |                                        |
 | `-fno-exceptions -fno-rtti`       |                                        |
 
+### `clang` vs `clang -cc1` 
+
+As per the clang [FAQ](https://clang.llvm.org/docs/FAQ.html#driver), `clang -cc1` is the frontend, and `clang` is a (mostly GCC compatible) driver for the frontend. To see all options that the driver passes on to the frontend, use `-###` like this:
+
+```
+$ clang -### -c hello.c
+"/usr/lib/llvm/bin/clang" "-cc1" "-triple" "x86_64-pc-linux-gnu" etc. etc. etc.
+```
+
+### Command line flags
+
+To see all command line flags use either `clang --help` or `clang --help-hidden` for the clang driver or `clang -cc1 -help` for the frontend.
+
 
 ## Resources
 

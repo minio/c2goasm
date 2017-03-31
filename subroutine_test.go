@@ -448,6 +448,11 @@ __ZL1a:
 	subroutine6 = append(subroutine6, Subroutine{name: "SimdSse2BgraToYuv444p", body: srcClang[144:153]})
 
 	testSubroutine(t, srcClang, subroutine6)
+
+	subroutine7 := []Subroutine{}
+	subroutine7 = append(subroutine7, Subroutine{name: "SimdSse2Bgr48pToBgra32", body: srcRetInMiddle[36:291]})
+
+	testSubroutine(t, srcRetInMiddle, subroutine7)
 }
 
 var srcClang = strings.Split(`	.text
@@ -764,3 +769,386 @@ LBB2_20:                                ## %_ZN4Simd4Sse213BgraToYuv444pILb1EEEv
 
 
 .subsections_via_symbols`, "\n")
+
+var srcRetInMiddle = strings.Split(`.text
+.intel_syntax noprefix
+.file	"/home/harsha/repos/Simd/src/Simd/SimdSse2BgrToBgra.cpp"
+.section	.rodata.cst16,"aM",@progbits,16
+.align	16
+.LCPI0_0:
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.byte	255                     # 0xff
+.byte	0                       # 0x0
+.text
+.globl	_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh
+.align	16, 0x90
+.type	_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh,@function
+_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh: # @_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh
+# BB#0:
+push	rbp
+mov	rbp, rsp
+push	r15
+push	r14
+push	r13
+push	r12
+push	rbx
+and	rsp, -8
+mov	r14b, byte ptr [rbp + 48]
+mov	r10, qword ptr [rbp + 40]
+mov	rax, qword ptr [rbp + 32]
+mov	r11, qword ptr [rbp + 24]
+mov	r12, qword ptr [rbp + 16]
+mov	rbx, rsi
+and	rbx, -16
+cmp	rbx, rsi
+jne	.LBB0_22
+# BB#1:
+mov	rbx, rdi
+and	rbx, -16
+cmp	rbx, rdi
+jne	.LBB0_22
+# BB#2:
+mov	rbx, r9
+and	rbx, -16
+cmp	rbx, r9
+jne	.LBB0_22
+# BB#3:
+mov	rbx, r8
+and	rbx, -16
+cmp	rbx, r8
+jne	.LBB0_22
+# BB#4:
+mov	rbx, r11
+and	rbx, -16
+cmp	rbx, r11
+jne	.LBB0_22
+# BB#5:
+mov	rbx, r12
+and	rbx, -16
+cmp	rbx, r12
+jne	.LBB0_22
+# BB#6:
+mov	rbx, r10
+and	rbx, -16
+cmp	rbx, r10
+jne	.LBB0_22
+# BB#7:
+mov	rbx, rax
+and	rbx, -16
+cmp	rbx, rax
+jne	.LBB0_22
+# BB#8:
+test	rcx, rcx
+je	.LBB0_36
+# BB#9:                                 # %.preheader.lr.ph.i1
+movzx	ebx, r14b
+shl	ebx, 8
+pxor	xmm0, xmm0
+pinsrw	xmm0, ebx, 0
+pinsrw	xmm0, ebx, 1
+pinsrw	xmm0, ebx, 2
+pinsrw	xmm0, ebx, 3
+pinsrw	xmm0, ebx, 4
+pinsrw	xmm0, ebx, 5
+pinsrw	xmm0, ebx, 6
+pinsrw	xmm0, ebx, 7
+mov	r15, rdx
+and	r15, -8
+je	.LBB0_19
+# BB#10:                                # %.lr.ph.us.i16.preheader
+xor	r14d, r14d
+cmp	r15, rdx
+jne	.LBB0_15
+# BB#11:
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_12:                               # %.lr.ph.us.i16.us
+# =>This Loop Header: Depth=1
+#     Child Loop BB0_13 Depth 2
+xor	ebx, ebx
+.align	16, 0x90
+.LBB0_13:                               #   Parent Loop BB0_12 Depth=1
+# =>  This Inner Loop Header: Depth=2
+movdqa	xmm2, xmmword ptr [rdi + 2*rbx]
+pand	xmm2, xmm1
+movdqa	xmm3, xmmword ptr [r8 + 2*rbx]
+pand	xmm3, xmm1
+movdqa	xmm4, xmmword ptr [r12 + 2*rbx]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqa	xmmword ptr [rax + 4*rbx], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqa	xmmword ptr [rax + 4*rbx + 16], xmm3
+add	rbx, 8
+cmp	rbx, rdx
+jb	.LBB0_13
+# BB#14:                                # %._crit_edge.us.i17.us
+#   in Loop: Header=BB0_12 Depth=1
+add	rdi, rsi
+add	r8, r9
+add	r12, r11
+add	rax, r10
+inc	r14
+cmp	r14, rcx
+jne	.LBB0_12
+jmp	.LBB0_36
+.LBB0_22:
+test	rcx, rcx
+je	.LBB0_36
+# BB#23:                                # %.preheader.lr.ph.i
+movzx	ebx, r14b
+shl	ebx, 8
+pxor	xmm0, xmm0
+pinsrw	xmm0, ebx, 0
+pinsrw	xmm0, ebx, 1
+pinsrw	xmm0, ebx, 2
+pinsrw	xmm0, ebx, 3
+pinsrw	xmm0, ebx, 4
+pinsrw	xmm0, ebx, 5
+pinsrw	xmm0, ebx, 6
+pinsrw	xmm0, ebx, 7
+mov	r13, rdx
+and	r13, -8
+je	.LBB0_29
+# BB#24:                                # %.lr.ph.us.i.preheader
+xor	r14d, r14d
+cmp	r13, rdx
+jne	.LBB0_32
+# BB#25:
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_26:                               # %.lr.ph.us.i.us
+# =>This Loop Header: Depth=1
+#     Child Loop BB0_27 Depth 2
+xor	ebx, ebx
+.align	16, 0x90
+.LBB0_27:                               #   Parent Loop BB0_26 Depth=1
+# =>  This Inner Loop Header: Depth=2
+movdqu	xmm2, xmmword ptr [rdi + 2*rbx]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [r8 + 2*rbx]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [r12 + 2*rbx]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax + 4*rbx], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax + 4*rbx + 16], xmm3
+add	rbx, 8
+cmp	rbx, rdx
+jb	.LBB0_27
+# BB#28:                                # %._crit_edge.us.i.us
+#   in Loop: Header=BB0_26 Depth=1
+add	rdi, rsi
+add	r8, r9
+add	r12, r11
+add	rax, r10
+inc	r14
+cmp	r14, rcx
+jne	.LBB0_26
+jmp	.LBB0_36
+.LBB0_29:                               # %.preheader.i.preheader
+cmp	r13, rdx
+je	.LBB0_36
+# BB#30:                                # %.preheader.i.preheader65
+lea	r14, [rdi + 2*rdx - 16]
+lea	rbx, [r8 + 2*rdx - 16]
+lea	rdi, [r12 + 2*rdx - 16]
+lea	rax, [rax + 4*rdx - 16]
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_31:                               # %.preheader.i
+# =>This Inner Loop Header: Depth=1
+movdqu	xmm2, xmmword ptr [r14]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [rbx]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [rdi]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax - 16], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax], xmm3
+add	r14, rsi
+add	rbx, r9
+add	rdi, r11
+add	rax, r10
+dec	rcx
+jne	.LBB0_31
+jmp	.LBB0_36
+.LBB0_32:
+lea	r15, [4*rdx - 32]
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_33:                               # %.lr.ph.us.i
+# =>This Loop Header: Depth=1
+#     Child Loop BB0_34 Depth 2
+xor	ebx, ebx
+.align	16, 0x90
+.LBB0_34:                               #   Parent Loop BB0_33 Depth=1
+# =>  This Inner Loop Header: Depth=2
+movdqu	xmm2, xmmword ptr [rdi + 2*rbx]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [r8 + 2*rbx]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [r12 + 2*rbx]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax + 4*rbx], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax + 4*rbx + 16], xmm3
+add	rbx, 8
+cmp	rbx, r13
+jb	.LBB0_34
+# BB#35:                                # %._crit_edge.us.i
+#   in Loop: Header=BB0_33 Depth=1
+movdqu	xmm2, xmmword ptr [rdi + 2*rdx - 16]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [r8 + 2*rdx - 16]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [r12 + 2*rdx - 16]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax + r15], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax + r15 + 16], xmm3
+add	rdi, rsi
+add	r8, r9
+add	r12, r11
+add	rax, r10
+inc	r14
+cmp	r14, rcx
+jne	.LBB0_33
+.LBB0_36:                               # %_ZN4Simd4Sse214Bgr48pToBgra32ILb1EEEvPKhmmmS3_mS3_mPhmh.exit
+lea	rsp, [rbp - 40]
+pop	rbx
+pop	r12
+pop	r13
+pop	r14
+pop	r15
+pop	rbp
+ret
+.LBB0_19:                               # %.preheader.lr.ph.split.i
+cmp	r15, rdx
+je	.LBB0_36
+# BB#20:                                # %.preheader.i26.preheader
+lea	r14, [rdi + 2*rdx - 16]
+lea	rbx, [r8 + 2*rdx - 16]
+lea	rdi, [r12 + 2*rdx - 16]
+lea	rax, [rax + 4*rdx - 16]
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_21:                               # %.preheader.i26
+# =>This Inner Loop Header: Depth=1
+movdqu	xmm2, xmmword ptr [r14]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [rbx]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [rdi]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax - 16], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax], xmm3
+add	r14, rsi
+add	rbx, r9
+add	rdi, r11
+add	rax, r10
+dec	rcx
+jne	.LBB0_21
+jmp	.LBB0_36
+.LBB0_15:
+lea	r13, [4*rdx - 32]
+movdqa	xmm1, xmmword ptr [rip + .LCPI0_0] # xmm1 = [255,0,255,0,255,0,255,0,255,0,255,0,255,0,255,0]
+.align	16, 0x90
+.LBB0_16:                               # %.lr.ph.us.i16
+# =>This Loop Header: Depth=1
+#     Child Loop BB0_17 Depth 2
+xor	ebx, ebx
+.align	16, 0x90
+.LBB0_17:                               #   Parent Loop BB0_16 Depth=1
+# =>  This Inner Loop Header: Depth=2
+movdqa	xmm2, xmmword ptr [rdi + 2*rbx]
+pand	xmm2, xmm1
+movdqa	xmm3, xmmword ptr [r8 + 2*rbx]
+pand	xmm3, xmm1
+movdqa	xmm4, xmmword ptr [r12 + 2*rbx]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqa	xmmword ptr [rax + 4*rbx], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqa	xmmword ptr [rax + 4*rbx + 16], xmm3
+add	rbx, 8
+cmp	rbx, r15
+jb	.LBB0_17
+# BB#18:                                # %._crit_edge.us.i17
+#   in Loop: Header=BB0_16 Depth=1
+movdqu	xmm2, xmmword ptr [rdi + 2*rdx - 16]
+pand	xmm2, xmm1
+movdqu	xmm3, xmmword ptr [r8 + 2*rdx - 16]
+pand	xmm3, xmm1
+movdqu	xmm4, xmmword ptr [r12 + 2*rdx - 16]
+pand	xmm4, xmm1
+pslldq	xmm3, 1                 # xmm3 = zero,xmm3[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+por	xmm3, xmm2
+por	xmm4, xmm0
+movdqa	xmm2, xmm3
+punpcklwd	xmm2, xmm4      # xmm2 = xmm2[0],xmm4[0],xmm2[1],xmm4[1],xmm2[2],xmm4[2],xmm2[3],xmm4[3]
+movdqu	xmmword ptr [rax + r13], xmm2
+punpckhwd	xmm3, xmm4      # xmm3 = xmm3[4],xmm4[4],xmm3[5],xmm4[5],xmm3[6],xmm4[6],xmm3[7],xmm4[7]
+movdqu	xmmword ptr [rax + r13 + 16], xmm3
+add	rdi, rsi
+add	r8, r9
+add	r12, r11
+add	rax, r10
+inc	r14
+cmp	r14, rcx
+jne	.LBB0_16
+jmp	.LBB0_36
+.Lfunc_end0:
+.size	_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh, .Lfunc_end0-_ZN4Simd4Sse214Bgr48pToBgra32EPKhmmmS2_mS2_mPhmh
+
+
+.ident	"clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)"
+.section	".note.GNU-stack","",@progbits`, "\n")

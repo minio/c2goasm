@@ -102,7 +102,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 		}
 
 		// Skip lines with aligns
-		if strings.Contains(line, ".align") {
+		if strings.Contains(line, ".align") || strings.Contains(line, ".p2align") {
 			continue
 		}
 

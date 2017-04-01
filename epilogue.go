@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 type Epilogue struct {
@@ -24,6 +23,8 @@ var regexpLeaRsp = regexp.MustCompile(`^\s*lea\s*rsp, `)
 var regexpPop = regexp.MustCompile(`^\s*pop\s*([a-z0-9]+)$`)
 var regexpPush = regexp.MustCompile(`^\s*push\s*([a-z0-9]+)$`)
 var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
+var regexpVZeroUpper = regexp.MustCompile(`^\s*vzeroupper\s*$`)
+var regexpReturn = regexp.MustCompile(`^\s*ret\s*$`)
 
 func (e *Epilogue) getTotalStackDepth(table Table, arguments int) uint {
 	stack := e.StackSize
@@ -71,9 +72,9 @@ func (e *Epilogue) extractEpilogue(line string) bool {
 		e.StackSize = uint(size)
 	} else if match := regexpLeaRsp.FindStringSubmatch(line); len(match) > 0 {
 		e.AlignedStack = true
-	} else if strings.Contains(line, "vzeroupper") {
+	} else if match := regexpVZeroUpper.FindStringSubmatch(line); len(match) > 0 {
 		e.VZeroUpper = true
-	} else if strings.Contains(line, "ret") {
+	} else if match := regexpReturn.FindStringSubmatch(line); len(match) > 0 {
 		// no action to take
 	} else {
 		return false

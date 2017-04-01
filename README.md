@@ -128,8 +128,8 @@ $ make -n SimdAvx2BgraToGray.s
 ## Compatible compilers
 
 The following compilers have been tested:
-- clang (Apple LLVM version) on OSX/darwin
-- clang on linux
+- `clang` (Apple LLVM version) on OSX/darwin
+- `clang` on linux
 
 Compiler flags:
 ```

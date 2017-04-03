@@ -26,13 +26,16 @@ func argumentsOnStack(lines []string) StackArgs {
 		}
 	}
 
-	offset := ^uint(0)
+	offset := uint(0)
 	for o := range offsets {
-		if o < offset {
+		if o > offset {
 			offset = o
 		}
 	}
-	return StackArgs{Number: len(offsets), OffsetToFirst: int(offset)}
+	if offset >= 16 {
+		return StackArgs{OffsetToFirst: 16, Number: 1+int((offset-16)/8)}
+	}
+	return StackArgs{OffsetToFirst: 0, Number: 0}
 }
 
 func parseCompanionFile(goCompanion, protoName string) int {

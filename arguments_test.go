@@ -23,7 +23,7 @@ func TestArguments(t *testing.T) {
      vmovups       ymmword ptr [rcx], ymm1
     `
 
-	testArguments(t, nostackargs, StackArgs{Number: 0, OffsetToFirst: -1})
+	testArguments(t, nostackargs, StackArgs{Number: 0, OffsetToFirst: 0})
 
 	arguments7 := `
 	 mov rax, qword [rbp + 16]

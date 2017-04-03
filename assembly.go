@@ -128,7 +128,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 			line = fixPicLabels(line, table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, table.isPresent() && epilogue.AlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, epilogue.StackSize, table.isPresent() && epilogue.AlignedStack)
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
@@ -298,7 +298,7 @@ func fixMovabsInstructions(line string) string {
 // Fix loads in the form of '[rbp + constant]'
 // These are load instructions for stack-based arguments that occur after the first 6 arguments
 // Remap to rsp/stack pointer and load from golang stack
-func fixRbpPlusLoad(line string, stackArgs StackArgs, argsBelowSP bool) string {
+func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, argsBelowSP bool) string {
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
@@ -307,7 +307,7 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, argsBelowSP bool) string {
 			offset -= (stackArgs.Number + 1 /* space for saved SP */ + stackArgs.OffsetToFirst/8) * 8
 			line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 		} else {
-			offset = offset - stackArgs.OffsetToFirst + returnAddrOnStack + 8*len(registers)
+			offset += int(stackSize)
 			line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 		}
 	}

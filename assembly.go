@@ -214,10 +214,15 @@ func upperCaseCalls(line string) string {
 	// Make 'call' instructions uppercase
 	if match := regexpCall.FindStringSubmatch(line); len(match) > 0 {
 		parts := strings.SplitN(line, `call`, 2)
+		fname := strings.TrimSpace(parts[1])
 
 		// replace c stdlib functions with equivalents
-		if strings.TrimSpace(parts[1]) == "_memcpy" {
-			parts[1] = fmt.Sprintf("clib·%s(SB)", strings.TrimSpace(parts[1]))
+		if fname == "_memcpy" || fname == "memcpy@PLT" { // (Procedure Linkage Table)
+			parts[1] = "clib·_memcpy(SB)"
+		} else if fname == "_memset" || fname == "memset@PLT" { // (Procedure Linkage Table)
+			parts[1] = "clib·_memset(SB)"
+		} else if fname == "___bzero" {
+			parts[1] = "clib·_bzero(SB)"
 		}
 		line = parts[0] + "CALL " + strings.TrimSpace(parts[1])
 	}

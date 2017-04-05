@@ -213,4 +213,35 @@ DATA LCTABLE<>+0x038(SB)/8, $0x0000000000000000
 GLOBL LCTABLE<>(SB), 8, $64`
 
 	testConstant(t, constant4, table4)
+
+	constant5 := `        .p2align        4
+.LCPI0_0:
+        .long   1127219200              # 0x43300000
+        .long   1160773632              # 0x45300000
+        .long   0                       # 0x0
+        .long   0                       # 0x0
+.LCPI0_1:
+        .quad   4841369599423283200     # double 4503599627370496
+        .quad   4985484787499139072     # double 1.9342813113834067E+25
+        .section        .rodata.cst8,"aM",@progbits,8
+        .p2align        3
+.LCPI0_2:
+        .quad   4602678819172646912     # double 0.5
+.LCPI0_3:
+        .quad   -4620693217682128896    # double -0.5
+        .section        .rodata.cst4,"aM",@progbits,4
+        .p2align        2
+.LCPI0_4:
+        .long   1098907648              # float 16`
+
+	table5 := `DATA LCTABLE<>+0x000(SB)/8, $0x4530000043300000
+DATA LCTABLE<>+0x008(SB)/8, $0x0000000000000000
+DATA LCTABLE<>+0x010(SB)/8, $0x4330000000000000
+DATA LCTABLE<>+0x018(SB)/8, $0x4530000000000000
+DATA LCTABLE<>+0x020(SB)/8, $0x3fe0000000000000
+DATA LCTABLE<>+0x028(SB)/8, $0xbfe0000000000000
+DATA LCTABLE<>+0x030(SB)/8, $0x0000000041800000
+GLOBL LCTABLE<>(SB), 8, $56`
+	
+	testConstant(t, constant5, table5)
 }

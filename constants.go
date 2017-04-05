@@ -57,7 +57,7 @@ func defineTable(constants []string, tableName string) Table {
 			bytes = append(bytes, byte(v>>40))
 			bytes = append(bytes, byte(v>>48))
 			bytes = append(bytes, byte(v>>56))
-		} else if strings.Contains(line, ".align") {
+		} else if strings.Contains(line, ".align") || strings.Contains(line, ".p2align") {
 			bits, _ := strconv.Atoi(strings.Fields(line)[1])
 			align := 1 << uint(bits)
 			for len(bytes)%align != 0 {

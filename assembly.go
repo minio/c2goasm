@@ -221,6 +221,8 @@ func upperCaseCalls(line string) string {
 			parts[1] = "clib·_memcpy(SB)"
 		} else if fname == "_memset" || fname == "memset@PLT" { // (Procedure Linkage Table)
 			parts[1] = "clib·_memset(SB)"
+		} else if fname == "_floor" || fname == "floor@PLT" { // (Procedure Linkage Table)
+			parts[1] = "clib·_floor(SB)"
 		} else if fname == "___bzero" {
 			parts[1] = "clib·_bzero(SB)"
 		}

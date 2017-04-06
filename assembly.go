@@ -118,9 +118,11 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 		}
 
 		line = removeUndefined(line, "ptr")
-		line = removeUndefined(line, "xmmword")
-		line = removeUndefined(line, "ymmword")
 		line = removeUndefined(line, "# NOREX")
+
+		// https://github.com/vertis/objconv/blob/master/src/disasm2.cpp
+		line = replaceUndefined(line, "xmmword", "oword")
+		line = replaceUndefined(line, "ymmword", "yword")
 
 		line = fixShiftInstructions(line)
 		line = fixMovabsInstructions(line)
@@ -244,6 +246,14 @@ func removeUndefined(line, undef string) string {
 
 	if parts := strings.SplitN(line, undef, 2); len(parts) > 1 {
 		line = parts[0] + strings.TrimSpace(parts[1])
+	}
+	return line
+}
+
+func replaceUndefined(line, undef, repl string) string {
+
+	if parts := strings.SplitN(line, undef, 2); len(parts) > 1 {
+		line = parts[0] + repl + parts[1]
 	}
 	return line
 }

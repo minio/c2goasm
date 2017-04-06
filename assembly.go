@@ -130,7 +130,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 			line = fixPicLabels(line, table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, epilogue.StackSize, table.isPresent() && epilogue.AlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, epilogue.StackSize, table.isPresent(), epilogue.AlignedStack)
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
@@ -315,18 +315,31 @@ func fixMovabsInstructions(line string) string {
 // Fix loads in the form of '[rbp + constant]'
 // These are load instructions for stack-based arguments that occur after the first 6 arguments
 // Remap to rsp/stack pointer and load from golang stack
-func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, argsBelowSP bool) string {
+func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPresent, alignedStack bool) string {
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
 		parts := strings.SplitN(line, "[rbp + ", 2)
-		if argsBelowSP {
-			offset -= (stackArgs.Number + 1 /* space for saved SP */ + stackArgs.OffsetToFirst/8) * 8
-			line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+		if tableIsPresent {
+			// Base pointer is setup for loading constants, so cannot use
+			if alignedStack {
+				offset -= (stackArgs.Number + (returnAddrOnStack /* space for saved SP */ + stackArgs.OffsetToFirst)/8) * 8
+				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+			} else {
+				// fixed stack size, load from base of stack pointer
+				offset += int(stackSize)
+				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+			}
 		} else {
-			offset += int(stackSize)
-			line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+			if alignedStack {
+				// Base pointer equal to (initial) stack pointer, so can leave loads untouched
+			} else {
+				// fixed stack size, load from base of stack pointer
+				offset = int(stackSize) + /*returnAddrOnStack*/ 8 + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
+				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+			}
 		}
+
 	}
 
 	return line

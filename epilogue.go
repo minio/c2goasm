@@ -26,17 +26,45 @@ var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 var regexpVZeroUpper = regexp.MustCompile(`^\s*vzeroupper\s*$`)
 var regexpReturn = regexp.MustCompile(`^\s*ret\s*$`)
 
-func (e *Epilogue) getTotalStackDepth(table Table, arguments int) uint {
-	stack := e.StackSize
+// get (if needed) any additional stack space for aligned stack
+func (e *Epilogue) additionalStackSpace(table Table, arguments int) uint {
+	additionalStackSpace := uint(0)
 	if e.AlignedStack {
-		stack += e.AlignValue
-		stack += returnAddrOnStack
+		// create space to restore original stack pointer
+		additionalStackSpace += returnAddrOnStack
 
 		if table.isPresent() {
 			if arguments > len(registers) {
-				stack += getTotalSizeOfArguments(len(registers), arguments-1)
+				// create space if we need to copy non-register passed arguments from the golang stack
+				additionalStackSpace += getTotalSizeOfArguments(len(registers), arguments-1)
 			}
 		}
+	}
+
+	return additionalStackSpace
+}
+
+// get value to decrement stack pointer with
+func (e *Epilogue) getStackpointerDecrement(table Table, arguments int) uint {
+	stack := e.StackSize
+	if e.AlignedStack {
+		stack += e.additionalStackSpace(table, arguments)
+
+		// For an aligned stack, round stack size up to next multiple of the alignment size
+		stack = (stack + e.AlignValue - 1) & ^(e.AlignValue - 1)
+	}
+
+	return stack
+}
+
+// get overall depth of stack (including rounding off to nearest alignment value)
+func (e *Epilogue) getTotalStackDepth(table Table, arguments int) uint {
+
+	stack := e.getStackpointerDecrement(table, arguments)
+
+	if e.AlignedStack {
+		// stack value is already a multiple, so will remain a multiple (no need to round up)
+		stack += e.AlignValue
 	}
 
 	return stack

@@ -32,9 +32,6 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", subroutine.epilogue.AlignValue))
-		if subroutine.epilogue.StackSize != 0 {
-			result = append(result, fmt.Sprintf("    SUBQ $%d, BP", subroutine.epilogue.StackSize))
-		}
 		result = append(result, fmt.Sprintf("    MOVQ SP, -%d(BP)", returnAddrOnStack)) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
@@ -70,15 +67,15 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 		// Aligned stack as required (zeroing out lower order bits), and create space
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", subroutine.epilogue.AlignValue))
 	}
-	if subroutine.epilogue.StackSize != 0 {
+	if subroutine.epilogue.getStackpointerDecrement(table, arguments) != 0 {
 		// Create stack space as needed
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.StackSize))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.getStackpointerDecrement(table, arguments)))
 	}
 
 	return append(result, ``)
 }
 
-func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue ) ([]string, error) {
+func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue, arguments int) ([]string, error) {
 
 	var result []string
 
@@ -89,7 +86,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 
 			// Instead of last line, output go assembly epilogue
 			if iline == epilogue.End - 1 {
-				result = append(result, writeGoasmEpilogue(epilogue)...)
+				result = append(result, writeGoasmEpilogue(epilogue, arguments, table)...)
 			}
 			continue
 		}
@@ -130,7 +127,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 			line = fixPicLabels(line, table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, epilogue.StackSize, table.isPresent(), epilogue.AlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, epilogue.getStackpointerDecrement(table, arguments)-epilogue.additionalStackSpace(table, arguments), table.isPresent(), epilogue.AlignedStack)
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
@@ -142,23 +139,21 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 }
 
 // Write the epilogue for the subroutine
-func writeGoasmEpilogue(stack Epilogue) []string {
+func writeGoasmEpilogue(epilogue Epilogue, arguments int, table Table) []string {
 
 	var result []string
 
 	// Restore the stack pointer
-	// - for an aligned stack, restore the stack pointer from the stack itself
-	// - for an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
-	if stack.AlignedStack {
-		result = append(result, fmt.Sprintf("    MOVQ -%d(SP), SP", returnAddrOnStack))
-	} else {
-		if stack.StackSize != 0 {
-			result = append(result, fmt.Sprintf("    ADDQ $%d, SP", stack.StackSize))
-		}
+	if epilogue.AlignedStack {
+		// For an aligned stack, restore the stack pointer from the stack itself
+		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, arguments)-returnAddrOnStack))
+	} else if epilogue.getStackpointerDecrement(table, arguments) != 0 {
+		// For an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", epilogue.getStackpointerDecrement(table, arguments)))
 	}
 
 	// Clear upper half of YMM register, if so done in the original code
-	if stack.VZeroUpper {
+	if epilogue.VZeroUpper {
 		result = append(result, "    VZEROUPPER")
 	}
 
@@ -323,10 +318,10 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPre
 		if tableIsPresent {
 			// Base pointer is setup for loading constants, so cannot use
 			if alignedStack {
-				offset -= (stackArgs.Number + (returnAddrOnStack /* space for saved SP */ + stackArgs.OffsetToFirst)/8) * 8
+				offset = int(stackSize) + (offset - stackArgs.OffsetToFirst)
 				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 			} else {
-				// fixed stack size, load from base of stack pointer
+				// fixed stack size, load from stack pointer
 				offset += int(stackSize)
 				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 			}
@@ -334,12 +329,11 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPre
 			if alignedStack {
 				// Base pointer equal to (initial) stack pointer, so can leave loads untouched
 			} else {
-				// fixed stack size, load from base of stack pointer
+				// fixed stack size, load from stack pointer
 				offset = int(stackSize) + /*returnAddrOnStack*/ 8 + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
 				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
 			}
 		}
-
 	}
 
 	return line

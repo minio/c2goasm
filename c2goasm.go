@@ -86,7 +86,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		result = append(result, writeGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue)
+		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue, golangArgs)
 		if err != nil {
 			panic(fmt.Sprintf("writeGoasmBody: %v", err))
 		}

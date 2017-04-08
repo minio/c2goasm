@@ -12,6 +12,8 @@ const returnAddrOnStack = 8
 
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
+var regexpPushInstr = regexp.MustCompile(`^\s*push\s*`)
+var regexpPopInstr = regexp.MustCompile(`^\s*pop\s*`)
 var regexpLabel = regexp.MustCompile(`^(\.?LBB.*:)`)
 var regexpJumpTableRef = regexp.MustCompile(`\[rip \+ (\.?LJTI[_0-9]*)\]\s*$`)
 var regexpJumpWithLabel = regexp.MustCompile(`^(\s*j\w*)\s*(\.?LBB.*)`)
@@ -131,6 +133,8 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
+		detectPushInstruction(line)
+		detectPopInstruction(line)
 
 		result = append(result, line)
 	}
@@ -353,5 +357,21 @@ func detectJumpTable(line string) {
 
 	if match := regexpJumpTableRef.FindStringSubmatch(line); len(match) > 0 {
 		panic(fmt.Sprintf("Jump table detected: %s\n\nCircumvent using '-fno-jump-tables', see 'clang -cc1 -help' (version 3.9+)\n\n", match[1]))
+	}
+}
+
+// Detect push instructions
+func detectPushInstruction(line string) {
+
+	if match := regexpPushInstr.FindStringSubmatch(line); len(match) > 0 {
+		panic(fmt.Sprintf("push instruction detected: %s\n\nCannot modify `rsp` in body of assembly\n\n", match[1]))
+	}
+}
+
+// Detect pop instructions
+func detectPopInstruction(line string) {
+
+	if match := regexpPopInstr.FindStringSubmatch(line); len(match) > 0 {
+		panic(fmt.Sprintf("pop instruction detected: %s\n\nCannot modify `rsp` in body of assembly\n\n", match[1]))
 	}
 }

@@ -122,15 +122,23 @@ func (e *Epilogue) isPrologueInstruction(line string) bool {
 
 	if match := regexpPush.FindStringSubmatch(line); len(match) > 1 {
 		hasCorrespondingPop := listContains(match[1], e.Pops)
-		if hasCorrespondingPop {
-			return true
-		} else if !hasCorrespondingPop && e.StackSize >= 8 {
-			// Could not find a corresponding `pop` but rsp is modified directly (see test-case pro/epilogue6)
-			e.StackSize -= 8
-			return true
-		} else {
-			return false
+		if !hasCorrespondingPop {
+			e._missingPops++
+			if e._missingPops == 1 { // only for first missing pop, set initial direction of growth to adapt check
+				if e.StackSize > 0 {
+					// Missing corresponding `pop` but rsp was modified directly in epilogue (see test-case pro/epilogue6)
+					e._stackGrowthSign = -1
+				} else {
+					// Missing corresponding `pop` meaning rsp is grown indirectly in prologue (see test-case pro/epilogue7)
+					e._stackGrowthSign = 1
+				}
+			}
+			e.StackSize += uint(8 * e._stackGrowthSign)
+			if e.StackSize == 0 && e._stackGrowthSign == -1 {
+				e._stackGrowthSign = 1 // flip direction once stack has shrunk to zero
+			}
 		}
+		return true
 	} else if match := regexpMov.FindStringSubmatch(line); len(match) > 2 && match[1] == "rbp" && match[2] == "rsp" {
 		if e.SetRbpInstr {
 			return true

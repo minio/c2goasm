@@ -176,4 +176,27 @@ func TestEpilogues(t *testing.T) {
 
 	testEpilogue(t, asmPrologue6, asmEpilogue6, epilogue6)
 
+	asmPrologue7 := `        push    rbp
+        mov     rbp, rsp
+        push    r15
+        push    r14
+        push    r13
+        push    r12
+        push    rbx
+        and     rsp, -8
+        push    rax`
+
+	asmEpilogue7 := `        lea     rsp, [rbp - 40]
+        pop     rbx
+        pop     r12
+        pop     r13
+        pop     r14
+        pop     r15
+        pop     rbp
+        ret`
+
+	epilogue7 := Epilogue{SetRbpInstr: true, VZeroUpper: false, StackSize: 8}
+	epilogue7.Pops = append(epilogue7.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
+
+	testEpilogue(t, asmPrologue7, asmEpilogue7, epilogue7)
 }

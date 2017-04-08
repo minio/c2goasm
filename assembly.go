@@ -15,7 +15,7 @@ var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 var regexpLabel = regexp.MustCompile(`^(\.?LBB.*:)`)
 var regexpJumpTableRef = regexp.MustCompile(`\[rip \+ (\.?LJTI[_0-9]*)\]\s*$`)
 var regexpJumpWithLabel = regexp.MustCompile(`^(\s*j\w*)\s*(\.?LBB.*)`)
-var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]\s*$`)
+var regexpRbpLoadHigher = regexp.MustCompile(`\[rbp \+ ([0-9]+)\]`)
 var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
@@ -309,21 +309,21 @@ func fixMovabsInstructions(line string) string {
 
 // Fix loads in the form of '[rbp + constant]'
 // These are load instructions for stack-based arguments that occur after the first 6 arguments
-// Remap to rsp/stack pointer and load from golang stack
+// Remap to rsp/stack pointer or load from golang stack
 func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPresent, alignedStack bool) string {
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
-		parts := strings.SplitN(line, "[rbp + ", 2)
+		parts := strings.SplitN(line, match[0], 2)
 		if tableIsPresent {
 			// Base pointer is setup for loading constants, so cannot use
 			if alignedStack {
 				offset = int(stackSize) + (offset - stackArgs.OffsetToFirst)
-				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
 			} else {
 				// fixed stack size, load from stack pointer
 				offset += int(stackSize)
-				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
 			}
 		} else {
 			if alignedStack {
@@ -331,7 +331,7 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPre
 			} else {
 				// fixed stack size, load from stack pointer
 				offset = int(stackSize) + /*returnAddrOnStack*/ 8 + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
-				line = parts[0] + fmt.Sprintf("%d[rsp] /* [rbp + %s */", offset, parts[1])
+				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
 			}
 		}
 	}

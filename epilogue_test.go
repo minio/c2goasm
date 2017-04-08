@@ -32,7 +32,7 @@ func testEpilogue(t *testing.T, prologue, epilogue string, expected Epilogue) {
 
 	if stack.StackSize != expected.StackSize || stack.AlignedStack != expected.AlignedStack ||
 		stack.VZeroUpper != expected.VZeroUpper || !equalString(stack.Pops, expected.Pops) ||
-		stack.SetRbpIns != expected.SetRbpIns {
+		stack.SetRbpInstr != expected.SetRbpInstr {
 		t.Errorf("testEpilogue(): \nexpected %#v\ngot      %#v", expected, stack)
 	}
 }
@@ -42,7 +42,7 @@ func TestEpilogues(t *testing.T) {
 	asmPrologue1 := `	   push    rbp
 	   mov     rbp, rsp`
 
-	epilogue1 := Epilogue{SetRbpIns: true, VZeroUpper: true}
+	epilogue1 := Epilogue{SetRbpInstr: true, VZeroUpper: true}
 	epilogue1.Pops = append(epilogue1.Pops, "rbp")
 
 	asmEpilogue1 := `	    pop     rbp
@@ -63,7 +63,7 @@ func TestEpilogues(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 864`
 
-	epilogue2 := Epilogue{SetRbpIns: true, StackSize: 864, AlignedStack: true, AlignValue: 32}
+	epilogue2 := Epilogue{SetRbpInstr: true, StackSize: 864, AlignedStack: true, AlignValue: 32}
 	epilogue2.Pops = append(epilogue2.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	asmEpilogue2 := `        lea     rsp, [rbp - 40]
@@ -86,7 +86,7 @@ func TestEpilogues(t *testing.T) {
 	   push    r12
 	   push    rbx`
 
-	epilogue3 := Epilogue{SetRbpIns: true}
+	epilogue3 := Epilogue{SetRbpInstr: true}
 	epilogue3.Pops = append(epilogue3.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	asmEpilogue3 := `        pop     rbx
@@ -109,7 +109,7 @@ func TestEpilogues(t *testing.T) {
 	   push    rbx
 	   sub     rsp, 152`
 
-	epilogue4 := Epilogue{SetRbpIns: true, StackSize: 152}
+	epilogue4 := Epilogue{SetRbpInstr: true, StackSize: 152}
 	epilogue4.Pops = append(epilogue4.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	asmEpilogue4 := `        add     rsp, 152
@@ -134,7 +134,7 @@ func TestEpilogues(t *testing.T) {
 	   and     rsp, -32
 	   sub     rsp, 192`
 
-	epilogue5 := Epilogue{SetRbpIns: true, StackSize: 192, AlignedStack: true, AlignValue: 32, VZeroUpper: true}
+	epilogue5 := Epilogue{SetRbpInstr: true, StackSize: 192, AlignedStack: true, AlignValue: 32, VZeroUpper: true}
 	epilogue5.Pops = append(epilogue5.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	asmEpilogue5 := `        lea     rsp, [rbp - 40]
@@ -160,7 +160,7 @@ func TestEpilogues(t *testing.T) {
 	push	rbx
 	push	rax`
 
-	epilogue6 := Epilogue{SetRbpIns: true, VZeroUpper: true}
+	epilogue6 := Epilogue{SetRbpInstr: true, VZeroUpper: true}
 	epilogue6.Pops = append(epilogue6.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	// `add rsp, 8` counters the additional `push rax` (there are 7 pushes and 6 pops)

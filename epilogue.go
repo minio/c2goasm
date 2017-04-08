@@ -7,13 +7,15 @@ import (
 )
 
 type Epilogue struct {
-	Pops         []string
-	SetRbpIns    bool
-	StackSize    uint
-	AlignedStack bool
-	AlignValue   uint
-	VZeroUpper   bool
-	Start, End   int
+	Pops             []string // list of registers that are popped of the stack
+	SetRbpInstr      bool     // is there an instruction to set Rbp in epilogue?
+	StackSize        uint     // the size of the C stack
+	AlignedStack     bool     // is this an aligned stack?
+	AlignValue       uint     // alignment value in case of an aligned stack
+	VZeroUpper       bool     // is there a vzeroupper instruction in the epilogue?
+	Start, End       int      // start and ending lines of epilogue
+	_missingPops     int      // internal variable to identify first push without a corresponding pop
+	_stackGrowthSign int      // direction to grow stack in case of detecting a push without a corresponding pop
 }
 
 var regexpAddRsp = regexp.MustCompile(`^\s*add\s*rsp, ([0-9]+)$`)
@@ -93,7 +95,7 @@ func (e *Epilogue) extractEpilogue(line string) bool {
 
 		e.Pops = append(e.Pops, register)
 		if register == "rbp" {
-			e.SetRbpIns = true
+			e.SetRbpInstr = true
 		}
 	} else if match := regexpAddRsp.FindStringSubmatch(line); len(match) > 1 {
 		size, _ := strconv.Atoi(match[1])
@@ -130,7 +132,7 @@ func (e *Epilogue) isPrologueInstruction(line string) bool {
 			return false
 		}
 	} else if match := regexpMov.FindStringSubmatch(line); len(match) > 2 && match[1] == "rbp" && match[2] == "rsp" {
-		if e.SetRbpIns {
+		if e.SetRbpInstr {
 			return true
 		} else {
 			panic(fmt.Sprintf("mov found but not expected to be set: %s", line))
@@ -149,7 +151,7 @@ func (e *Epilogue) isPrologueInstruction(line string) bool {
 		space, _ := strconv.Atoi(match[1])
 		if !e.AlignedStack && e.StackSize == uint(space) {
 			return true
-		} else if e.StackSize == 0 || e.StackSize == uint(space)  {
+		} else if e.StackSize == 0 || e.StackSize == uint(space) {
 			e.StackSize = uint(space) // Update stack size when found in header (and missing in footer due to `lea` instruction)
 			return true
 		} else {

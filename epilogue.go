@@ -28,6 +28,12 @@ var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 var regexpVZeroUpper = regexp.MustCompile(`^\s*vzeroupper\s*$`)
 var regexpReturn = regexp.MustCompile(`^\s*ret\s*$`)
 
+func (e *Epilogue) getFreeSpaceAtBottom() uint {
+	size := uint(returnAddrOnStack) // make sure return address of calling routine is preserved
+	size += 0			// additional space at bottom of stack for CALLs etc.
+	return size
+}
+
 // get (if needed) any additional stack space for aligned stack
 func (e *Epilogue) additionalStackSpace(table Table, arguments int) uint {
 	additionalStackSpace := uint(0)

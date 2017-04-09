@@ -71,7 +71,7 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 	}
 	if subroutine.epilogue.getStackpointerDecrement(table, arguments) != 0 {
 		// Create stack space as needed
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", subroutine.epilogue.getStackpointerDecrement(table, arguments)))
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.getFreeSpaceAtBottom()))
 	}
 
 	return append(result, ``)
@@ -152,8 +152,8 @@ func writeGoasmEpilogue(epilogue Epilogue, arguments int, table Table) []string 
 		// For an aligned stack, restore the stack pointer from the stack itself
 		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, arguments)-returnAddrOnStack))
 	} else if epilogue.getStackpointerDecrement(table, arguments) != 0 {
-		// For an unaligned stack, simply add the (fixed size) stack size in order restore the stack pointer
-		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", epilogue.getStackpointerDecrement(table, arguments)))
+		// For an unaligned stack, reverse addition in order restore the stack pointer
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", epilogue.getFreeSpaceAtBottom()))
 	}
 
 	// Clear upper half of YMM register, if so done in the original code

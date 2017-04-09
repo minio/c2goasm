@@ -319,24 +319,82 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPre
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
 		parts := strings.SplitN(line, match[0], 2)
-		if tableIsPresent {
-			// Base pointer is setup for loading constants, so cannot use
-			if alignedStack {
-				offset = int(stackSize) + (offset - stackArgs.OffsetToFirst)
-				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
-			} else {
-				// fixed stack size, load from stack pointer
-				offset += int(stackSize)
-				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
-			}
+		if !alignedStack {
+			//
+			// There is a fixed stack size, so always load from stack pointer
+			//
+			// +----------------+
+			// | ret1           |
+			// +----------------+
+			// | argN           |
+			// +----------------+
+			// | arg...         |
+			// +----------------+
+			// | arg7           |
+			// +----------------+
+			// | arg6           |     (register passed)
+			// +----------------+
+			// | arg2 ... arg5  |     (register passed)
+			// +----------------+
+			// | arg1           |     (register passed)
+			// +----------------+
+			// | return address |
+			// +----------------+
+			// |                |
+			// |  local         |
+			// |                |
+			// |  stack         |
+			// |                |
+			// |                |
+			// +----------------+ <-- bottom of stack
+			//
+			offset = int(stackSize) + returnAddrOnStack + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
+			line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
+		} else if tableIsPresent {
+			//
+			// Base pointer is setup for loading constants, so cannot use rbp
+			// Non-register passed stack based arguments are moved to top of the stack
+			//
+			// +----------------+
+			// | ret1           |
+			// +----------------+
+			// | argN           |
+			// +----------------+
+			// | arg...         |
+			// +----------------+
+			// | arg7           |
+			// +----------------+
+			// | arg6           |     (register passed)
+			// +----------------+
+			// | arg2 ... arg5  |     (register passed)
+			// +----------------+
+			// | arg1           |     (register passed)
+			// +----------------+
+			// | return address |
+			// +----------------+
+			// | align space... |     (unused)
+			// +----------------+
+			// |----------------|
+			// || original SP  ||
+			// |----------------|
+			// || argN         ||     (copy)
+			// |----------------|
+			// || arg...       ||     (copy)
+			// |----------------|
+			// || arg7         ||     (copy)
+			// +----------------+
+			// |                |
+			// |  local         |
+			// |                |
+			// |  stack         |
+			// |                |
+			// |                |
+			// +----------------+ <-- aligned address (bottom of stack)
+			//
+			offset = int(stackSize) + (offset - stackArgs.OffsetToFirst)
+			line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
 		} else {
-			if alignedStack {
-				// Base pointer equal to (initial) stack pointer, so can leave loads untouched
-			} else {
-				// fixed stack size, load from stack pointer
-				offset = int(stackSize) + /*returnAddrOnStack*/ 8 + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
-				line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
-			}
+			// Base pointer is equal to (initial) stack pointer, so can leave loads untouched
 		}
 	}
 

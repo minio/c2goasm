@@ -8,6 +8,7 @@ import (
 	"unicode"
 )
 
+const originalStackPointer = 8
 const returnAddrOnStack = 8
 
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
@@ -31,18 +32,29 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 		subroutine.epilogue.getTotalStackDepth(table, arguments), getTotalSizeOfArguments(0, arguments-1)))
 
 	if subroutine.epilogue.AlignedStack {
+
+		offset := subroutine.epilogue.getTotalStackDepth(table, arguments)
+		if offset % subroutine.epilogue.AlignValue != 0 {
+			panic(fmt.Sprintf("Offset (%d) must be a multiple of alignment value (%d)", offset, subroutine.epilogue.AlignValue))
+		}
+
+		// We can save one addq instruction by collapsing the offset into the 'offset(BP)'
+		// result = append(result, fmt.Sprintf("    ADDQ $%d, BP", offset))
+		destAddr := offset - originalStackPointer
+
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", subroutine.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    MOVQ SP, -%d(BP)", returnAddrOnStack)) // Save original SP
+		result = append(result, fmt.Sprintf("    MOVQ SP, %d(BP)", destAddr)) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
 		if table.isPresent() {
 			// For the case assembly expects stack based arguments
 			for arg := arguments - 1; arg >= len(registers); arg-- {
+				destAddr -= 8
 				// Copy golang stack based arguments below saved original stack pointer
 				result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), DI", arg+1, arg*8))
-				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", -returnAddrOnStack+(arguments-arg)*-8))
+				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", destAddr))
 			}
 		}
 	}
@@ -66,10 +78,10 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 
 	// Setup the stack pointer
 	if subroutine.epilogue.AlignedStack {
-		// Aligned stack as required (zeroing out lower order bits), and create space
+		// Align stack pointer to next multiple of alignment space
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.AlignValue))
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", subroutine.epilogue.AlignValue))
-	}
-	if subroutine.epilogue.getStackpointerDecrement(table, arguments) != 0 {
+	} else if subroutine.epilogue.getStackpointerDecrement(table, arguments) != 0 {
 		// Create stack space as needed
 		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.getFreeSpaceAtBottom()))
 	}
@@ -150,7 +162,7 @@ func writeGoasmEpilogue(epilogue Epilogue, arguments int, table Table) []string 
 	// Restore the stack pointer
 	if epilogue.AlignedStack {
 		// For an aligned stack, restore the stack pointer from the stack itself
-		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, arguments)-returnAddrOnStack))
+		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, arguments)-originalStackPointer))
 	} else if epilogue.getStackpointerDecrement(table, arguments) != 0 {
 		// For an unaligned stack, reverse addition in order restore the stack pointer
 		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", epilogue.getFreeSpaceAtBottom()))

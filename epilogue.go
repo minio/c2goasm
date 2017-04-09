@@ -39,7 +39,7 @@ func (e *Epilogue) additionalStackSpace(table Table, arguments int) uint {
 	additionalStackSpace := uint(0)
 	if e.AlignedStack {
 		// create space to restore original stack pointer
-		additionalStackSpace += returnAddrOnStack
+		additionalStackSpace += originalStackPointer
 
 		if table.isPresent() {
 			if arguments > len(registers) {
@@ -47,6 +47,10 @@ func (e *Epilogue) additionalStackSpace(table Table, arguments int) uint {
 				additionalStackSpace += getTotalSizeOfArguments(len(registers), arguments-1)
 			}
 		}
+
+		// For an aligned stack, round up to next multiple of the alignment size
+		// (guarantee for goasm prologue that ANDQ for BP  has same effect as ANDQ for SP)
+		additionalStackSpace = (additionalStackSpace + e.AlignValue - 1) & ^(e.AlignValue - 1)
 	}
 
 	return additionalStackSpace

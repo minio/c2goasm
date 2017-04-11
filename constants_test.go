@@ -244,4 +244,25 @@ DATA LCTABLE<>+0x030(SB)/8, $0x0000000041800000
 GLOBL LCTABLE<>(SB), 8, $56`
 
 	testConstant(t, constant5, table5)
+
+	constant6 := `        .p2align        4
+.LCPI1_0:
+        .zero   16,1
+.LCPI1_1:
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4
+        .short  4                       # 0x4`
+
+	table6 := `DATA LCTABLE<>+0x000(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x008(SB)/8, $0x0101010101010101
+DATA LCTABLE<>+0x010(SB)/8, $0x0004000400040004
+DATA LCTABLE<>+0x018(SB)/8, $0x0004000400040004
+GLOBL LCTABLE<>(SB), 8, $32`
+
+	testConstant(t, constant6, table6)
 }

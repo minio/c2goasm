@@ -22,6 +22,47 @@ type Label struct {
 	Offset uint
 }
 
+func getSingleNumber(line string) int64 {
+
+	if len(strings.Fields(line)) > 2 {
+		panic(fmt.Sprintf("Too many fields found: %d", len(strings.Fields(line))))
+	}
+	field := strings.Fields(line)[1]
+	if len(strings.Split(field, ",")) > 1 {
+		panic(fmt.Sprintf("Unexpected comma found in field: %s", field))
+	}
+	v, err := strconv.ParseInt(field, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("Number parsing error: %v", err))
+	}
+	return v
+}
+
+func getDualNumbers(line string) (int64, int64) {
+
+	if len(strings.Fields(line)) > 2 {
+		panic(fmt.Sprintf("Too many fields found: %d", len(strings.Fields(line))))
+	}
+	field := strings.Fields(line)[1]
+	args := strings.Split(field, ",")
+	if len(args) > 2 {
+		panic(fmt.Sprintf("Too many commas found in field: %s", field))
+	}
+	r1, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("Number parsing error: %v", err))
+	}
+	r2 := int64(0)
+	if len(args) > 1 {
+		r2, err = strconv.ParseInt(args[1], 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("Number parsing error: %v", err))
+		}
+	}
+
+	return r1, r2
+}
+
 func defineTable(constants []string, tableName string) Table {
 
 	labels := []Label{}
@@ -29,17 +70,19 @@ func defineTable(constants []string, tableName string) Table {
 
 	for _, line := range constants {
 
+		line, _ = stripComments(line)
+
 		if strings.HasSuffix(line, ":") {
 			labels = append(labels, Label{Name: line[:len(line)-1], Offset: uint(len(bytes))})
 		} else if strings.Contains(line, ".byte") {
-			v, _ := strconv.Atoi(strings.Fields(line)[1])
+			v := getSingleNumber(line)
 			bytes = append(bytes, byte(v))
 		} else if strings.Contains(line, ".short") {
-			v, _ := strconv.Atoi(strings.Fields(line)[1])
+			v := getSingleNumber(line)
 			bytes = append(bytes, byte(v))
 			bytes = append(bytes, byte(v>>8))
 		} else if strings.Contains(line, ".long") {
-			v, _ := strconv.Atoi(strings.Fields(line)[1])
+			v := getSingleNumber(line)
 			bytes = append(bytes, byte(v))
 			bytes = append(bytes, byte(v>>8))
 			bytes = append(bytes, byte(v>>16))
@@ -58,25 +101,14 @@ func defineTable(constants []string, tableName string) Table {
 			bytes = append(bytes, byte(v>>48))
 			bytes = append(bytes, byte(v>>56))
 		} else if strings.Contains(line, ".align") || strings.Contains(line, ".p2align") {
-			bits, _ := strconv.Atoi(strings.Fields(line)[1])
+			bits := getSingleNumber(line)
 			align := 1 << uint(bits)
 			for len(bytes)%align != 0 {
 				bytes = append(bytes, 0)
 			}
-		} else if strings.Contains(line, ".zero") {
-			length, _ := strconv.Atoi(strings.Fields(line)[1])
-			for i := 0; i < length; i++ {
-				bytes = append(bytes, byte(0))
-			}
-		} else if strings.Contains(line, ".space") {
-			argument := strings.Fields(line)[1]
-			args := strings.Split(argument, ",")
-			length, _ := strconv.Atoi(args[0])
-			b := 0
-			if len(args) > 1 {
-				b, _ = strconv.Atoi(args[1])
-			}
-			for i := 0; i < length; i++ {
+		} else if strings.Contains(line, ".space") || strings.Contains(line, ".zero"){
+			length, b := getDualNumbers(line)
+			for i := int64(0); i < length; i++ {
 				bytes = append(bytes, byte(b))
 			}
 		} else if strings.Contains(line, ".section") {

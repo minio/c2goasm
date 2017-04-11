@@ -47,27 +47,42 @@ func parseCompanionFile(goCompanion, protoName string) int {
 
 	for _, goline := range gocode {
 
-		ok, args := getGolangArgs(protoName, goline)
+		ok, args, _ := getGolangArgs(protoName, goline)
 		if ok {
-			return args
+			return len(args)
 		}
 	}
 
 	panic(fmt.Sprintf("Failed to find function prototype for %s", protoName))
 }
 
-var regexpFuncAndArgs = regexp.MustCompile(`func\s+(.*)\((.*)\)`)
+var regexpFuncAndArgs = regexp.MustCompile(`^\s*func\s+([^\(]*)\(([^\)]*)\)`)
+var regexpReturnVals = regexp.MustCompile(`^\s*func\s+[^\(]*\([^\)]*\)\s+\((.*)\)`)
+	//regexp.MustCompile(`^\s*func\s+.*\(.*\)\s+\((.*)\)`)
 
-func getGolangArgs(protoName, goline string) (bool, int) {
+func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string) {
 
 	// Search for name of function and arguments
 	if match := regexpFuncAndArgs.FindStringSubmatch(goline); len(match) > 2 {
 		if match[1] == "_"+protoName {
-			return true, len(strings.Split(match[2], ","))
+
+			args, rets = []string{}, []string{}
+			for _, arg := range strings.Split(match[2], ",") {
+				args = append(args, strings.Fields(arg)[0])
+			}
+
+			// Search for name of function and arguments
+			if rmatch := regexpReturnVals.FindStringSubmatch(goline); len(rmatch) > 1 {
+				for _, ret := range strings.Split(rmatch[1], ",") {
+					rets = append(rets, strings.Fields(ret)[0])
+				}
+			}
+
+			return true, args, rets
 		}
 	}
 
-	return false, 0
+	return false, []string{}, []string{}
 }
 
 func getTotalSizeOfArguments(argStart, argEnd int) uint {

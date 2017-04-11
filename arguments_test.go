@@ -167,12 +167,15 @@ func TestArguments(t *testing.T) {
 	//	`
 }
 
-func testProto(t *testing.T, protoName, goline string, expected int) {
+func testProto(t *testing.T, protoName, goline string, expectedNumArgs, expectedNumRets int) {
 
-	_, args := getGolangArgs(protoName, goline)
+	_, args, rets := getGolangArgs(protoName, goline)
 
-	if args != expected {
-		t.Errorf("testProto(): \nexpected %#v\ngot      %#v", expected, args)
+	if len(args) != expectedNumArgs {
+		t.Errorf("testProto(): \nexpected number of arguments %d\ngot      %d", expectedNumArgs, len(args))
+	}
+	if len(rets) != expectedNumRets {
+		t.Errorf("testProto(): \nexpected number of return values %d\ngot      %d", expectedNumRets, len(rets))
 	}
 
 }
@@ -181,17 +184,21 @@ func TestPrototypes(t *testing.T) {
 
 	proto1 := `func _SimdAvx2BgraToGray(bgra unsafe.Pointer, width uint64, height uint64, bgraStride uint64, gray unsafe.Pointer, grayStride uint64)`
 
-	testProto(t, "SimdAvx2BgraToGray", proto1, 6)
+	testProto(t, "SimdAvx2BgraToGray", proto1, 6, 0)
 
 	proto2 := `func _SimdSsse3Reorder32bit(src unsafe.Pointer, size uint64, dst unsafe.Pointer)`
 
-	testProto(t, "SimdSsse3Reorder32bit", proto2, 3)
+	testProto(t, "SimdSsse3Reorder32bit", proto2, 3, 0)
 
 	proto3 := `func _SimdAvx2ReduceGray2x2(src unsafe.Pointer, srcWidth, srcHeight, srcStride uint64, dst unsafe.Pointer, dstWidth, dstHeight, dstStride uint64)`
 
-	testProto(t, "SimdAvx2ReduceGray2x2", proto3, 8)
+	testProto(t, "SimdAvx2ReduceGray2x2", proto3, 8, 0)
 
 	proto4 := `func _SimdShiftBilinear(src unsafe.Pointer, srcStride, width, height, channelCount uin64, bkg unsafe.Pointer,  bkgStride uint64, shiftX, shiftY unsafe.Pointer, cropLeft, cropTop, cropRight, cropBottom uin64, dst unsafe.Pointer, dstStride uint64)`
 
-	testProto(t, "SimdShiftBilinear", proto4, 15)
+	testProto(t, "SimdShiftBilinear", proto4, 15, 0)
+
+	proto5 := `func _SimdSse2HistogramBufAllocSize(width int) (alloc int)`
+
+	testProto(t, "SimdSse2HistogramBufAllocSize", proto5, 1, 1)
 }

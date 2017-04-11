@@ -97,3 +97,9 @@ func getTotalSizeOfArguments(argStart, argEnd int) uint {
 	// TODO: Test if correct for non 64-bit arguments
 	return uint((argEnd - argStart + 1)*8)
 }
+
+func getTotalSizeOfArgumentsAndReturnValues(argStart, argEnd int, returnValues []string) uint {
+	// TODO: Test if correct for non 64-bit return values
+	return getTotalSizeOfArguments(argStart, argEnd) + uint(len(returnValues)*8)
+}
+

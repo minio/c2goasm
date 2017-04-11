@@ -23,13 +23,14 @@ var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
-func writeGoasmPrologue(subroutine Subroutine, arguments []string, table Table) []string {
+func writeGoasmPrologue(subroutine Subroutine, arguments, returnValues []string, table Table) []string {
 
 	var result []string
 
 	// Output definition of subroutine
 	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d\n", subroutine.name,
-		subroutine.epilogue.getTotalStackDepth(table, len(arguments)), getTotalSizeOfArguments(0, len(arguments)-1)))
+		subroutine.epilogue.getTotalStackDepth(table, len(arguments)),
+		getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)))
 
 	if subroutine.epilogue.AlignedStack {
 
@@ -89,7 +90,7 @@ func writeGoasmPrologue(subroutine Subroutine, arguments []string, table Table) 
 	return append(result, ``)
 }
 
-func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue, arguments int) ([]string, error) {
+func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue, arguments, returnValues []string) ([]string, error) {
 
 	var result []string
 
@@ -100,7 +101,7 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 
 			// Instead of last line, output go assembly epilogue
 			if iline == epilogue.End - 1 {
-				result = append(result, writeGoasmEpilogue(epilogue, arguments, table)...)
+				result = append(result, writeGoasmEpilogue(epilogue, arguments, returnValues, table)...)
 			}
 			continue
 		}
@@ -155,15 +156,15 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 }
 
 // Write the epilogue for the subroutine
-func writeGoasmEpilogue(epilogue Epilogue, arguments int, table Table) []string {
+func writeGoasmEpilogue(epilogue Epilogue, arguments, returnValues []string, table Table) []string {
 
 	var result []string
 
 	// Restore the stack pointer
 	if epilogue.AlignedStack {
 		// For an aligned stack, restore the stack pointer from the stack itself
-		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, arguments)-originalStackPointer))
-	} else if epilogue.getStackpointerDecrement(table, arguments) != 0 {
+		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, len(arguments))-originalStackPointer))
+	} else if epilogue.getStackpointerDecrement(table, len(arguments)) != 0 {
 		// For an unaligned stack, reverse addition in order restore the stack pointer
 		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", epilogue.getFreeSpaceAtBottom()))
 	}
@@ -171,6 +172,13 @@ func writeGoasmEpilogue(epilogue Epilogue, arguments int, table Table) []string 
 	// Clear upper half of YMM register, if so done in the original code
 	if epilogue.VZeroUpper {
 		result = append(result, "    VZEROUPPER")
+	}
+
+	if len(returnValues) == 1 {
+		// Store return value of function
+		result = append(result, fmt.Sprintf("    MOVQ AX, %s+%d(FP)", returnValues[0], getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)- 8))
+	} else if len(returnValues) > 1 {
+		panic(fmt.Sprintf("Fix multiple return values: %s", returnValues))
 	}
 
 	// Finally, return out of the subroutine

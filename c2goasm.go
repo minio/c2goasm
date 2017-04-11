@@ -67,10 +67,10 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	// Iterate over all subroutines
 	for isubroutine, s := range subroutines {
 
-		golangArgs := parseCompanionFile(goCompanionFile, s.name)
+		golangArgs, _ := parseCompanionFile(goCompanionFile, s.name)
 		stackArgs := argumentsOnStack(s.body)
-		if golangArgs > 6 && golangArgs-6 < stackArgs.Number {
-			panic(fmt.Sprintf("Found too few arguments on stack (%d) but needed %d", golangArgs-6, stackArgs.Number))
+		if len(golangArgs) > 6 && len(golangArgs)-6 < stackArgs.Number {
+			panic(fmt.Sprintf("Found too few arguments on stack (%d) but needed %d", len(golangArgs)-6, stackArgs.Number))
 		}
 
 		// Check for constants table
@@ -86,7 +86,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		result = append(result, writeGoasmPrologue(s, golangArgs, table)...)
 
 		// Write body of code
-		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue, golangArgs)
+		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue, len(golangArgs))
 		if err != nil {
 			panic(fmt.Sprintf("writeGoasmBody: %v", err))
 		}

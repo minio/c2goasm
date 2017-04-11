@@ -39,7 +39,7 @@ func argumentsOnStack(lines []string) StackArgs {
 	return StackArgs{OffsetToFirst: 0, Number: 0}
 }
 
-func parseCompanionFile(goCompanion, protoName string) int {
+func parseCompanionFile(goCompanion, protoName string) ([]string, []string) {
 
 	gocode, err := readLines(goCompanion)
 	if err != nil {
@@ -48,11 +48,11 @@ func parseCompanionFile(goCompanion, protoName string) int {
 
 	for _, goline := range gocode {
 
-		ok, args, _, err := getGolangArgs(protoName, goline)
+		ok, args, rets, err := getGolangArgs(protoName, goline)
 		if err != nil {
 			panic(fmt.Sprintf("Error: %v", err))
 		} else if ok {
-			return len(args)
+			return args, rets
 		}
 	}
 
@@ -81,7 +81,7 @@ func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string, 
 						rets = append(rets, strings.Fields(ret)[0])
 					}
 				} else {
-					return false, args, rets, errors.New(fmt.Sprintf("Badly formatted return argument (please use paranthesis and proper arguments naming): %s", trailer))
+					return false, args, rets, errors.New(fmt.Sprintf("Badly formatted return argument (please use parenthesis and proper arguments naming): %s", trailer))
 				}
 
 			}

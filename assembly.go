@@ -23,17 +23,17 @@ var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
-func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []string {
+func writeGoasmPrologue(subroutine Subroutine, arguments []string, table Table) []string {
 
 	var result []string
 
 	// Output definition of subroutine
 	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d\n", subroutine.name,
-		subroutine.epilogue.getTotalStackDepth(table, arguments), getTotalSizeOfArguments(0, arguments-1)))
+		subroutine.epilogue.getTotalStackDepth(table, len(arguments)), getTotalSizeOfArguments(0, len(arguments)-1)))
 
 	if subroutine.epilogue.AlignedStack {
 
-		offset := subroutine.epilogue.getTotalStackDepth(table, arguments)
+		offset := subroutine.epilogue.getTotalStackDepth(table, len(arguments))
 		if offset % subroutine.epilogue.AlignValue != 0 {
 			panic(fmt.Sprintf("Offset (%d) must be a multiple of alignment value (%d)", offset, subroutine.epilogue.AlignValue))
 		}
@@ -50,10 +50,10 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 		// In case base pointer is used for constants and the offset is non-deterministic
 		if table.isPresent() {
 			// For the case assembly expects stack based arguments
-			for arg := arguments - 1; arg >= len(registers); arg-- {
+			for arg := len(arguments) - 1; arg >= len(registers); arg-- {
 				destAddr -= 8
 				// Copy golang stack based arguments below saved original stack pointer
-				result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), DI", arg+1, arg*8))
+				result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), DI", arguments[arg], arg*8))
 				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", destAddr))
 			}
 		}
@@ -62,8 +62,8 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 	// Load initial arguments (up to 6) in corresponding registers
 	for arg, reg := range registers {
 
-		result = append(result, fmt.Sprintf("    MOVQ arg%d+%d(FP), %s", arg+1, arg*8, reg))
-		if arg+1 == arguments {
+		result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arguments[arg], arg*8, reg))
+		if arg+1 == len(arguments) {
 			break
 		}
 	}
@@ -81,7 +81,7 @@ func writeGoasmPrologue(subroutine Subroutine, arguments int, table Table) []str
 		// Align stack pointer to next multiple of alignment space
 		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.AlignValue))
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", subroutine.epilogue.AlignValue))
-	} else if subroutine.epilogue.getStackpointerDecrement(table, arguments) != 0 {
+	} else if subroutine.epilogue.getStackpointerDecrement(table, len(arguments)) != 0 {
 		// Create stack space as needed
 		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.getFreeSpaceAtBottom()))
 	}

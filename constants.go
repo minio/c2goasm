@@ -63,6 +63,16 @@ func getDualNumbers(line string) (int64, int64) {
 	return r1, r2
 }
 
+// Sanify check to detect labels with identical offsets
+func sanityCheckLabels(labels []Label) {
+
+	for i := 0; i < len(labels) - 1; i++ {
+		if labels[i].Offset == labels[i+1].Offset {
+			panic(fmt.Sprintf("Detected two labels with identical offsets: %v and %v", labels[i], labels[i+1]))
+		}
+	}
+}
+
 func defineTable(constants []string, tableName string) Table {
 
 	labels := []Label{}
@@ -136,6 +146,8 @@ func defineTable(constants []string, tableName string) Table {
 		table = append(table, fmt.Sprintf("DATA %s<>+0x%s(SB)/8, $0x%s", tableName, offset, hex))
 	}
 	table = append(table, fmt.Sprintf("GLOBL %s<>(SB), 8, $%d", tableName, len(bytes)))
+
+	sanityCheckLabels(labels)
 
 	return Table{Name: tableName, Constants: strings.Join(table, "\n"), Labels: labels}
 }

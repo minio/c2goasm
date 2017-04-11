@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,8 +48,10 @@ func parseCompanionFile(goCompanion, protoName string) int {
 
 	for _, goline := range gocode {
 
-		ok, args, _ := getGolangArgs(protoName, goline)
-		if ok {
+		ok, args, _, err := getGolangArgs(protoName, goline)
+		if err != nil {
+			panic(fmt.Sprintf("Error: %v", err))
+		} else if ok {
 			return len(args)
 		}
 	}
@@ -56,11 +59,10 @@ func parseCompanionFile(goCompanion, protoName string) int {
 	panic(fmt.Sprintf("Failed to find function prototype for %s", protoName))
 }
 
-var regexpFuncAndArgs = regexp.MustCompile(`^\s*func\s+([^\(]*)\(([^\)]*)\)`)
-var regexpReturnVals = regexp.MustCompile(`^\s*func\s+[^\(]*\([^\)]*\)\s+\((.*)\)`)
-	//regexp.MustCompile(`^\s*func\s+.*\(.*\)\s+\((.*)\)`)
+var regexpFuncAndArgs = regexp.MustCompile(`^\s*func\s+([^\(]*)\(([^\)]*)\)(.*)`)
+var regexpReturnVals = regexp.MustCompile(`^\((.*)\)`)
 
-func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string) {
+func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string, err error) {
 
 	// Search for name of function and arguments
 	if match := regexpFuncAndArgs.FindStringSubmatch(goline); len(match) > 2 {
@@ -71,18 +73,24 @@ func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string) 
 				args = append(args, strings.Fields(arg)[0])
 			}
 
-			// Search for name of function and arguments
-			if rmatch := regexpReturnVals.FindStringSubmatch(goline); len(rmatch) > 1 {
-				for _, ret := range strings.Split(rmatch[1], ",") {
-					rets = append(rets, strings.Fields(ret)[0])
+			trailer := strings.TrimSpace(match[3])
+			if len(trailer) > 0 {
+				// Trailing string found, search for return values
+				if rmatch := regexpReturnVals.FindStringSubmatch(trailer); len(rmatch) > 1 {
+					for _, ret := range strings.Split(rmatch[1], ",") {
+						rets = append(rets, strings.Fields(ret)[0])
+					}
+				} else {
+					return false, args, rets, errors.New(fmt.Sprintf("Badly formatted return argument (please use paranthesis and proper arguments naming): %s", trailer))
 				}
+
 			}
 
-			return true, args, rets
+			return true, args, rets, nil
 		}
 	}
 
-	return false, []string{}, []string{}
+	return false, []string{}, []string{}, nil
 }
 
 func getTotalSizeOfArguments(argStart, argEnd int) uint {

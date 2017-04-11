@@ -199,4 +199,18 @@ func TestEpilogues(t *testing.T) {
 	epilogue7.Pops = append(epilogue7.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
 
 	testEpilogue(t, asmPrologue7, asmEpilogue7, epilogue7)
+
+	asmPrologue8 := `push    rbp
+        mov     rbp, rsp
+        and     rsp, -8`
+
+	asmEpilogue8 := `mov     rsp, rbp
+        pop     rbp
+        ret`
+
+	epilogue8 := Epilogue{SetRbpInstr: true, VZeroUpper: false, StackSize: 0}
+	epilogue8.Pops = append(epilogue8.Pops, "rbp")
+
+	testEpilogue(t, asmPrologue8, asmEpilogue8, epilogue8)
+
 }

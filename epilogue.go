@@ -114,6 +114,8 @@ func (e *Epilogue) extractEpilogue(line string) bool {
 		e.AlignedStack = true
 	} else if match := regexpVZeroUpper.FindStringSubmatch(line); len(match) > 0 {
 		e.VZeroUpper = true
+	} else if match := regexpMov.FindStringSubmatch(line); len(match) > 2 && match[1] == "rsp" && match[2] == "rbp" {
+		// no action to take
 	} else if match := regexpReturn.FindStringSubmatch(line); len(match) > 0 {
 		// no action to take
 	} else {

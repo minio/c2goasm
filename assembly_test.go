@@ -90,13 +90,56 @@ func TestAssemblyUnalignedWithTableWithStackArgs(t *testing.T) {
 		}
 	}
 
-	test := "mov    rax, qword ptr [rbp + 16]"
+	test := "mov    rax, qword [rbp + 16]"
 
 	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
 
-	dstStrideMov := `mov    rax, qword ptr 64[rsp] /* [rbp + 16] */`
+	dstStrideMov := `mov    rax, qword 64[rsp] /* [rbp + 16] */`
 	if dstStrideMov != result {
 		t.Errorf("TestAssemblyUnalignedWithTableWithStackArgs(): \nexpected %s\ngot %s", dstStrideMov, result)
+
+	}
+}
+
+func TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(t *testing.T) {
+
+	epilogue := Epilogue{SetRbpInstr: true, StackSize: 0, AlignedStack: false, AlignValue: 0, VZeroUpper: false}
+	epilogue.Pops = append(epilogue.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	table := Table{Name: "LCDATA1"}
+
+	subroutine := Subroutine{name: "SimdSse2MedianFilterRhomb3x3", epilogue: epilogue, table: table}
+	arguments, returnValues := []string{}, []string{}
+	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
+
+	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
+	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
+
+	unalignedWithTableWithStackZeroSize := `TEXT ·_SimdSse2MedianFilterRhomb3x3(SB), 7, $0-56
+
+	MOVQ src+0(FP), DI
+	MOVQ srcStride+8(FP), SI
+	MOVQ width+16(FP), DX
+	MOVQ height+24(FP), CX
+	MOVQ channelCount+32(FP), R8
+	MOVQ dst+40(FP), R9
+	LEAQ LCDATA1<>(SB), BP
+
+	RET`
+
+	for i, l := range lines {
+		goldenLine := strings.Split(unalignedWithTableWithStackZeroSize, "\n")[i]
+		if strings.TrimSpace(l) != strings.TrimSpace(goldenLine) {
+			t.Errorf("TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(): \nexpected %s\ngot %s", goldenLine, l)
+		}
+	}
+
+	test := "mov    rax, qword [rbp + 16]"
+
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+
+	dstStrideMov := `mov    rax, qword 56[rsp] /* [rbp + 16] */`
+	if dstStrideMov != result {
+		t.Errorf("TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(): \nexpected %s\ngot %s", dstStrideMov, result)
 
 	}
 }

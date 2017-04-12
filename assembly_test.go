@@ -10,15 +10,15 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 
 	epilogue := Epilogue{SetRbpInstr: true, StackSize: 64, AlignedStack: true, AlignValue: 16, VZeroUpper: false}
 	epilogue.Pops = append(epilogue.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
-
-	subroutine := Subroutine{name: "SimdSse2MedianFilterRhomb5x5", epilogue: epilogue}
-	arguments, returnValues := []string{}, []string{}
-	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 	table := Table{Name: "LCDATA3"}
 
-	lines := writeGoasmPrologue(subroutine, arguments, returnValues, table)
+	subroutine := Subroutine{name: "SimdSse2MedianFilterRhomb5x5", epilogue: epilogue, table: table}
+	arguments, returnValues := []string{}, []string{}
+	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 
-	lines = append(lines, writeGoasmEpilogue(subroutine.epilogue, arguments, returnValues, table)...)
+	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
+
+	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
 
 	caseAlignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), 7, $96-56
 

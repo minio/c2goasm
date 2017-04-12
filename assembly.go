@@ -23,20 +23,21 @@ var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
-func writeGoasmPrologue(subroutine Subroutine, arguments, returnValues []string, table Table) []string {
+func writeGoasmPrologue(sub Subroutine, arguments, returnValues []string) []string {
 
 	var result []string
 
-	// Output definition of subroutine
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d", subroutine.name,
-		subroutine.epilogue.getTotalStackDepth(table, len(arguments)),
+	// Output definition of sub
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d", sub.name,
+		sub.epilogue.getTotalStackDepth(sub.table, len(arguments)),
 		getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)), "")
 
-	if subroutine.epilogue.AlignedStack {
+	if sub.epilogue.AlignedStack {
 
-		offset := subroutine.epilogue.getTotalStackDepth(table, len(arguments))
-		if offset % subroutine.epilogue.AlignValue != 0 {
-			panic(fmt.Sprintf("Offset (%d) must be a multiple of alignment value (%d)", offset, subroutine.epilogue.AlignValue))
+		offset := sub.epilogue.getTotalStackDepth(sub.table, len(arguments))
+		if offset % sub.epilogue.AlignValue != 0 {
+			panic(fmt.Sprintf("Offset (%d) must be a multiple of alignment value (%d)", offset,
+				sub.epilogue.AlignValue))
 		}
 
 		// We can save one addq instruction by collapsing the offset into the 'offset(BP)'
@@ -45,11 +46,11 @@ func writeGoasmPrologue(subroutine Subroutine, arguments, returnValues []string,
 
 		// Save original stack pointer right below newly aligned stack pointer
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", subroutine.epilogue.AlignValue))
+		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", sub.epilogue.AlignValue))
 		result = append(result, fmt.Sprintf("    MOVQ SP, %d(BP)", destAddr)) // Save original SP
 
 		// In case base pointer is used for constants and the offset is non-deterministic
-		if table.isPresent() {
+		if sub.table.isPresent() {
 			// For the case assembly expects stack based arguments
 			for arg := len(arguments) - 1; arg >= len(registers); arg-- {
 				destAddr -= 8
@@ -69,39 +70,39 @@ func writeGoasmPrologue(subroutine Subroutine, arguments, returnValues []string,
 		}
 	}
 
-	if table.isPresent() {
+	if sub.table.isPresent() {
 		// Setup base pointer for loading constants
-		result = append(result, fmt.Sprintf("    LEAQ %s<>(SB), BP", table.Name))
-	} else if subroutine.epilogue.AlignedStack {
+		result = append(result, fmt.Sprintf("    LEAQ %s<>(SB), BP", sub.table.Name))
+	} else if sub.epilogue.AlignedStack {
 		// Setup base pointer to be able to load golang stack based arguments
 		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
 	}
 
 	// Setup the stack pointer
-	if subroutine.epilogue.AlignedStack {
+	if sub.epilogue.AlignedStack {
 		// Align stack pointer to next multiple of alignment space
-		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", subroutine.epilogue.AlignValue))
-	} else if subroutine.epilogue.getStackpointerDecrement(table, len(arguments)) != 0 {
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", sub.epilogue.AlignValue))
+		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", sub.epilogue.AlignValue))
+	} else if sub.epilogue.getStackpointerDecrement(sub.table, len(arguments)) != 0 {
 		// Create stack space as needed
-		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", subroutine.epilogue.getFreeSpaceAtBottom()))
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", sub.epilogue.getFreeSpaceAtBottom()))
 	}
 
 	return append(result, ``)
 }
 
-func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue Epilogue, arguments, returnValues []string) ([]string, error) {
+func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues []string) ([]string, error) {
 
 	var result []string
 
-	for iline, line := range lines {
+	for iline, line := range sub.body {
 
 		// If part of epilogue
-		if iline >= epilogue.Start && iline < epilogue.End {
+		if iline >= sub.epilogue.Start && iline < sub.epilogue.End {
 
 			// Instead of last line, output go assembly epilogue
-			if iline == epilogue.End - 1 {
-				result = append(result, writeGoasmEpilogue(epilogue, arguments, returnValues, table)...)
+			if iline == sub.epilogue.End - 1 {
+				result = append(result, writeGoasmEpilogue(sub, arguments, returnValues)...)
 			}
 			continue
 		}
@@ -138,11 +139,11 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 
 		line = fixShiftInstructions(line)
 		line = fixMovabsInstructions(line)
-		if table.isPresent() {
-			line = fixPicLabels(line, table)
+		if sub.table.isPresent() {
+			line = fixPicLabels(line, sub.table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, epilogue.getStackpointerDecrement(table, arguments)-epilogue.additionalStackSpace(table, arguments), table.isPresent(), epilogue.AlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, sub.epilogue.getStackpointerDecrement(sub.table, len(arguments)), sub.epilogue.additionalStackSpace(sub.table, len(arguments)), sub.table.isPresent(), sub.epilogue.AlignedStack)
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
@@ -156,15 +157,17 @@ func writeGoasmBody(lines []string, table Table, stackArgs StackArgs, epilogue E
 }
 
 // Write the epilogue for the subroutine
-func writeGoasmEpilogue(epilogue Epilogue, arguments, returnValues []string, table Table) []string {
+func writeGoasmEpilogue(sub Subroutine, arguments, returnValues []string) []string {
 
 	var result []string
+
+	epilogue, table := &sub.epilogue, &sub.table
 
 	// Restore the stack pointer
 	if epilogue.AlignedStack {
 		// For an aligned stack, restore the stack pointer from the stack itself
-		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(table, len(arguments))-originalStackPointer))
-	} else if epilogue.getStackpointerDecrement(table, len(arguments)) != 0 {
+		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(*table, len(arguments))-originalStackPointer))
+	} else if epilogue.getStackpointerDecrement(*table, len(arguments)) != 0 {
 		// For an unaligned stack, reverse addition in order restore the stack pointer
 		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", epilogue.getFreeSpaceAtBottom()))
 	}
@@ -175,7 +178,7 @@ func writeGoasmEpilogue(epilogue Epilogue, arguments, returnValues []string, tab
 	}
 
 	if len(returnValues) == 1 {
-		// Store return value of function
+		// Store return value of subroutine
 		result = append(result, fmt.Sprintf("    MOVQ AX, %s+%d(FP)", returnValues[0], getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)- 8))
 	} else if len(returnValues) > 1 {
 		panic(fmt.Sprintf("Fix multiple return values: %s", returnValues))

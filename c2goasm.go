@@ -65,28 +65,29 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	var result []string
 
 	// Iterate over all subroutines
-	for isubroutine, s := range subroutines {
+	for isubroutine, sub := range subroutines {
 
-		golangArgs, golangReturns := parseCompanionFile(goCompanionFile, s.name)
-		stackArgs := argumentsOnStack(s.body)
+		golangArgs, golangReturns := parseCompanionFile(goCompanionFile, sub.name)
+		stackArgs := argumentsOnStack(sub.body)
 		if len(golangArgs) > 6 && len(golangArgs)-6 < stackArgs.Number {
 			panic(fmt.Sprintf("Found too few arguments on stack (%d) but needed %d", len(golangArgs)-6, stackArgs.Number))
 		}
 
 		// Check for constants table
-		var table Table
-		if table = getCorrespondingTable(s.body, tables); table.isPresent() {
+		if table := getCorrespondingTable(sub.body, tables); table.isPresent() {
 
 			// Output constants table
 			result = append(result, strings.Split(table.Constants, "\n")...)
 			result = append(result, "") // append empty line
+
+			sub.table = table
 		}
 
 		// Write header for subroutine in go assembly
-		result = append(result, writeGoasmPrologue(s, golangArgs, golangReturns, table)...)
+		result = append(result, writeGoasmPrologue(sub, golangArgs, golangReturns)...)
 
 		// Write body of code
-		assembly, err := writeGoasmBody(s.body, table, stackArgs, s.epilogue, golangArgs, golangReturns)
+		assembly, err := writeGoasmBody(sub, stackArgs, golangArgs, golangReturns)
 		if err != nil {
 			panic(fmt.Sprintf("writeGoasmBody: %v", err))
 		}

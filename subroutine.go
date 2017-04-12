@@ -14,6 +14,7 @@ type Subroutine struct {
 	name     string
 	body     []string
 	epilogue Epilogue
+	table    Table
 }
 
 type Global struct {

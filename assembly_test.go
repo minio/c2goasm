@@ -1,9 +1,62 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
+
+func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
+
+	epilogue := Epilogue{SetRbpInstr: true, StackSize: 64, AlignedStack: true, AlignValue: 16, VZeroUpper: false}
+	epilogue.Pops = append(epilogue.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
+
+	subroutine := Subroutine{name: "SimdSse2MedianFilterRhomb5x5", epilogue: epilogue}
+	arguments, returnValues := []string{}, []string{}
+	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
+	table := Table{Name: "LCDATA3"}
+
+	lines := writeGoasmPrologue(subroutine, arguments, returnValues, table)
+
+	lines = append(lines, writeGoasmEpilogue(subroutine.epilogue, arguments, returnValues, table)...)
+
+	caseAlignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), 7, $96-56
+
+	MOVQ SP, BP
+	ANDQ $-16, BP
+	MOVQ SP, 88(BP)
+	MOVQ dstStride+48(FP), DI
+	MOVQ DI, 80(BP)
+	MOVQ src+0(FP), DI
+	MOVQ srcStride+8(FP), SI
+	MOVQ width+16(FP), DX
+	MOVQ height+24(FP), CX
+	MOVQ channelCount+32(FP), R8
+	MOVQ dst+40(FP), R9
+	LEAQ LCDATA3<>(SB), BP
+	ADDQ $16, SP
+	ANDQ $-16, SP
+
+	MOVQ 72(SP), SP
+	RET`
+
+	for i, l := range lines {
+		goldenLine := strings.Split(caseAlignedWithTable, "\n")[i]
+		if strings.TrimSpace(l) != strings.TrimSpace(goldenLine) {
+			t.Errorf("TestAssemblyAlignedWithTableWithStackArgs(): \nexpected %s\ngot %s", goldenLine, l)
+		}
+	}
+
+	test := "mov	r11, qword ptr [rbp + 16]"
+
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+
+	dstStrideMov := `mov	r11, qword ptr 64[rsp] /* [rbp + 16] */`
+	if dstStrideMov != result {
+		t.Errorf("TestAssemblyAlignedWithTableWithStackArgs(): \nexpected %s\ngot %s", dstStrideMov, result)
+
+	}
+}
 
 func TestRbpPlusLoad(t *testing.T) {
 
@@ -21,7 +74,7 @@ func TestRbpPlusLoad(t *testing.T) {
 	stackArgs := StackArgs{OffsetToFirst: 256}
 	for _, test := range strings.Split(tests, "\n") {
 		test, _ = stripComments(test)
-		result := fixRbpPlusLoad(test, stackArgs, 0, true, true)
+		result := fixRbpPlusLoad(test, stackArgs, 0, 0, true, true)
 
 		if !(strings.Contains(result, `/*`) && strings.Contains(result, `*/`)) {
 			t.Errorf("TestRbpPlusLoad(): \nexpected to find C-style comment\ngot %s", result)

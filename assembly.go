@@ -28,9 +28,9 @@ func writeGoasmPrologue(subroutine Subroutine, arguments, returnValues []string,
 	var result []string
 
 	// Output definition of subroutine
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d\n", subroutine.name,
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d", subroutine.name,
 		subroutine.epilogue.getTotalStackDepth(table, len(arguments)),
-		getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)))
+		getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)), "")
 
 	if subroutine.epilogue.AlignedStack {
 

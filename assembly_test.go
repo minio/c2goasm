@@ -17,10 +17,9 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 
 	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
-
 	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
 
-	caseAlignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), 7, $96-56
+	alignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), 7, $96-56
 
 	MOVQ SP, BP
 	ANDQ $-16, BP
@@ -41,7 +40,7 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 	RET`
 
 	for i, l := range lines {
-		goldenLine := strings.Split(caseAlignedWithTable, "\n")[i]
+		goldenLine := strings.Split(alignedWithTable, "\n")[i]
 		if strings.TrimSpace(l) != strings.TrimSpace(goldenLine) {
 			t.Errorf("TestAssemblyAlignedWithTableWithStackArgs(): \nexpected %s\ngot %s", goldenLine, l)
 		}
@@ -54,6 +53,50 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 	dstStrideMov := `mov	r11, qword ptr 64[rsp] /* [rbp + 16] */`
 	if dstStrideMov != result {
 		t.Errorf("TestAssemblyAlignedWithTableWithStackArgs(): \nexpected %s\ngot %s", dstStrideMov, result)
+	}
+}
+
+func TestAssemblyUnalignedWithTableWithStackArgs(t *testing.T) {
+
+	epilogue := Epilogue{SetRbpInstr: true, StackSize: 8, AlignedStack: false, AlignValue: 0, VZeroUpper: false}
+	epilogue.Pops = append(epilogue.Pops, "rbp", "r15", "r14", "r13", "r12", "rbx")
+	table := Table{Name: "LCDATA2"}
+
+	subroutine := Subroutine{name: "SimdSse2MedianFilterSquare3x3", epilogue: epilogue, table: table}
+	arguments, returnValues := []string{}, []string{}
+	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
+
+	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
+	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
+
+	unalignedWithTable := `TEXT ·_SimdSse2MedianFilterSquare3x3(SB), 7, $8-56
+
+	MOVQ src+0(FP), DI
+	MOVQ srcStride+8(FP), SI
+	MOVQ width+16(FP), DX
+	MOVQ height+24(FP), CX
+	MOVQ channelCount+32(FP), R8
+	MOVQ dst+40(FP), R9
+	LEAQ LCDATA2<>(SB), BP
+	ADDQ $8, SP
+
+	SUBQ $8, SP
+	RET`
+
+	for i, l := range lines {
+		goldenLine := strings.Split(unalignedWithTable, "\n")[i]
+		if strings.TrimSpace(l) != strings.TrimSpace(goldenLine) {
+			t.Errorf("TestAssemblyUnalignedWithTableWithStackArgs(): \nexpected %s\ngot %s", goldenLine, l)
+		}
+	}
+
+	test := "mov    rax, qword ptr [rbp + 16]"
+
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+
+	dstStrideMov := `mov    rax, qword ptr 64[rsp] /* [rbp + 16] */`
+	if dstStrideMov != result {
+		t.Errorf("TestAssemblyUnalignedWithTableWithStackArgs(): \nexpected %s\ngot %s", dstStrideMov, result)
 
 	}
 }

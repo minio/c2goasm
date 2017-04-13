@@ -14,7 +14,7 @@ type Table struct {
 }
 
 func (t *Table) isPresent() bool {
-	return len(t.Labels) > 0
+	return len(t.Name) > 0
 }
 
 type Label struct {

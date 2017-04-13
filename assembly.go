@@ -9,9 +9,9 @@ import (
 )
 
 const originalStackPointer = 8
-const returnAddrOnStack = 8
 
 var registers = [...]string{"DI", "SI", "DX", "CX", "R8", "R9"}
+var registersAdditional = [...]string{"R10", "R11", "R12", "R13", "R14", "R15", "AX", "BX"}
 var regexpCall = regexp.MustCompile(`^\s*call\s*`)
 var regexpPushInstr = regexp.MustCompile(`^\s*push\s*`)
 var regexpPopInstr = regexp.MustCompile(`^\s*pop\s*`)
@@ -27,65 +27,49 @@ func writeGoasmPrologue(sub Subroutine, arguments, returnValues []string) []stri
 
 	var result []string
 
-	// Output definition of sub
-	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), 7, $%d-%d", sub.name,
-		sub.epilogue.getTotalStackDepth(sub.table, len(arguments)),
+	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
+
+	// Output definition of subroutine
+	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), $%d-%d", sub.name, stack.GolangLocalStackFrameSize(),
 		getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)), "")
 
-	if sub.epilogue.AlignedStack {
+	// Load Golang arguments into registers
+	for iarg, arg := range arguments {
 
-		offset := sub.epilogue.getTotalStackDepth(sub.table, len(arguments))
-		if offset % sub.epilogue.AlignValue != 0 {
-			panic(fmt.Sprintf("Offset (%d) must be a multiple of alignment value (%d)", offset,
-				sub.epilogue.AlignValue))
-		}
-
-		// We can save one addq instruction by collapsing the offset into the 'offset(BP)'
-		// result = append(result, fmt.Sprintf("    ADDQ $%d, BP", offset))
-		destAddr := offset - originalStackPointer
-
-		// Save original stack pointer right below newly aligned stack pointer
-		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-		result = append(result, fmt.Sprintf("    ANDQ $-%d, BP", sub.epilogue.AlignValue))
-		result = append(result, fmt.Sprintf("    MOVQ SP, %d(BP)", destAddr)) // Save original SP
-
-		// In case base pointer is used for constants and the offset is non-deterministic
-		if sub.table.isPresent() {
-			// For the case assembly expects stack based arguments
-			for arg := len(arguments) - 1; arg >= len(registers); arg-- {
-				destAddr -= 8
-				// Copy golang stack based arguments below saved original stack pointer
-				result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), DI", arguments[arg], arg*8))
-				result = append(result, fmt.Sprintf("    MOVQ DI, %d(BP)", destAddr))
-			}
+		if iarg < len(registers) {
+			// Load initial arguments (up to 6) in corresponding registers
+			result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arg, iarg*8, registers[iarg]))
+		} else if iarg - len(registers) < len(registersAdditional) {
+			// Load following arguments into additional registers
+			result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arg, iarg*8, registersAdditional[iarg - len(registers)]))
+		} else {
+			panic("Trying to pass in too many arguments")
 		}
 	}
 
-	// Load initial arguments (up to 6) in corresponding registers
-	for arg, reg := range registers {
-
-		result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arguments[arg], arg*8, reg))
-		if arg+1 == len(arguments) {
-			break
-		}
-	}
-
-	if sub.table.isPresent() {
-		// Setup base pointer for loading constants
-		result = append(result, fmt.Sprintf("    LEAQ %s<>(SB), BP", sub.table.Name))
-	} else if sub.epilogue.AlignedStack {
-		// Setup base pointer to be able to load golang stack based arguments
-		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
-	}
-
-	// Setup the stack pointer
+	// Setup the stack pointer for the C code
 	if sub.epilogue.AlignedStack {
 		// Align stack pointer to next multiple of alignment space
-		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", sub.epilogue.AlignValue))
+		result = append(result, fmt.Sprintf("    MOVQ SP, BP"))
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", stack.StackPointerOffsetForC() /*sub.epilogue.AlignValue*/))
 		result = append(result, fmt.Sprintf("    ANDQ $-%d, SP", sub.epilogue.AlignValue))
-	} else if sub.epilogue.getStackpointerDecrement(sub.table, len(arguments)) != 0 {
+
+		// Save original stack pointer right below newly aligned stack pointer
+		result = append(result, fmt.Sprintf("    MOVQ BP, %d(SP)", stack.OffsetForSavedSP())) // Save original SP
+
+	} else if stack.StackPointerOffsetForC() != 0 { // sub.epilogue.getStackSpace(len(arguments)) != 0 {
 		// Create stack space as needed
-		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", sub.epilogue.getFreeSpaceAtBottom()))
+		result = append(result, fmt.Sprintf("    ADDQ $%d, SP", stack.StackPointerOffsetForC() /*sub.epilogue.getFreeSpaceAtBottom())*/))
+	}
+
+	// Save Golang arguments beyond 6 onto stack
+	for iarg := len(arguments) - 1; iarg - len(registers) >= 0; iarg-- {
+		result = append(result, fmt.Sprintf("    MOVQ %s, %d(SP)", registersAdditional[iarg - len(registers)], stack.OffsetForGoArg(iarg)))
+	}
+
+	// Setup base pointer for loading constants
+	if sub.table.isPresent() {
+		result = append(result, fmt.Sprintf("    LEAQ %s<>(SB), BP", sub.table.Name))
 	}
 
 	return append(result, ``)
@@ -94,6 +78,8 @@ func writeGoasmPrologue(sub Subroutine, arguments, returnValues []string) []stri
 func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues []string) ([]string, error) {
 
 	var result []string
+
+	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
 
 	for iline, line := range sub.body {
 
@@ -143,7 +129,7 @@ func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues
 			line = fixPicLabels(line, sub.table)
 		}
 
-		line = fixRbpPlusLoad(line, stackArgs, sub.epilogue.getStackpointerDecrement(sub.table, len(arguments)), sub.epilogue.additionalStackSpace(sub.table, len(arguments)), sub.table.isPresent(), sub.epilogue.AlignedStack)
+		line = fixRbpPlusLoad(line, stackArgs, stack)
 
 		detectRbpMinusMemoryAccess(line)
 		detectJumpTable(line)
@@ -161,25 +147,26 @@ func writeGoasmEpilogue(sub Subroutine, arguments, returnValues []string) []stri
 
 	var result []string
 
-	epilogue, table := &sub.epilogue, &sub.table
+	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
 
 	// Restore the stack pointer
-	if epilogue.AlignedStack {
+	if sub.epilogue.AlignedStack {
 		// For an aligned stack, restore the stack pointer from the stack itself
-		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", epilogue.getStackpointerDecrement(*table, len(arguments))-originalStackPointer))
-	} else if epilogue.getStackpointerDecrement(*table, len(arguments)) != 0 {
+		result = append(result, fmt.Sprintf("    MOVQ %d(SP), SP", stack.OffsetForSavedSP()))
+	} else if stack.StackPointerOffsetForC() != 0 {
 		// For an unaligned stack, reverse addition in order restore the stack pointer
-		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", epilogue.getFreeSpaceAtBottom()))
+		result = append(result, fmt.Sprintf("    SUBQ $%d, SP", stack.StackPointerOffsetForC()))
 	}
 
 	// Clear upper half of YMM register, if so done in the original code
-	if epilogue.VZeroUpper {
+	if sub.epilogue.VZeroUpper {
 		result = append(result, "    VZEROUPPER")
 	}
 
 	if len(returnValues) == 1 {
 		// Store return value of subroutine
-		result = append(result, fmt.Sprintf("    MOVQ AX, %s+%d(FP)", returnValues[0], getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)- 8))
+		result = append(result, fmt.Sprintf("    MOVQ AX, %s+%d(FP)", returnValues[0],
+			getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)- 8))
 	} else if len(returnValues) > 1 {
 		panic(fmt.Sprintf("Fix multiple return values: %s", returnValues))
 	}
@@ -336,89 +323,15 @@ func fixMovabsInstructions(line string) string {
 
 // Fix loads in the form of '[rbp + constant]'
 // These are load instructions for stack-based arguments that occur after the first 6 arguments
-// Remap to rsp/stack pointer or load from golang stack
-func fixRbpPlusLoad(line string, stackArgs StackArgs, stackSize uint, tableIsPresent, alignedStack bool) string {
+// Remap to stack pointer
+func fixRbpPlusLoad(line string, stackArgs StackArgs, stack Stack) string {
 
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
+		// TODO: Get proper offset for non 64-bit arguments
+		iarg := len(registers) + (offset - stackArgs.OffsetToFirst)/8
 		parts := strings.SplitN(line, match[0], 2)
-		if !alignedStack {
-			//
-			// There is a fixed stack size, so always load from stack pointer
-			//
-			// +----------------+
-			// | ret1           |
-			// +----------------+
-			// | argN           |
-			// +----------------+
-			// | arg...         |
-			// +----------------+
-			// | arg7           |
-			// +----------------+
-			// | arg6           |     (register passed)
-			// +----------------+
-			// | arg2 ... arg5  |     (register passed)
-			// +----------------+
-			// | arg1           |     (register passed)
-			// +----------------+
-			// | return address |
-			// +----------------+
-			// |                |
-			// |  local         |
-			// |                |
-			// |  stack         |
-			// |                |
-			// |                |
-			// +----------------+ <-- bottom of stack
-			//
-			offset = int(stackSize) + returnAddrOnStack + 8*len(registers) + (offset - stackArgs.OffsetToFirst)
-			line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
-		} else if tableIsPresent {
-			//
-			// Base pointer is setup for loading constants, so cannot use rbp
-			// Non-register passed stack based arguments are moved to top of the stack
-			//
-			// +----------------+
-			// | ret1           |
-			// +----------------+
-			// | argN           |
-			// +----------------+
-			// | arg...         |
-			// +----------------+
-			// | arg7           |
-			// +----------------+
-			// | arg6           |     (register passed)
-			// +----------------+
-			// | arg2 ... arg5  |     (register passed)
-			// +----------------+
-			// | arg1           |     (register passed)
-			// +----------------+
-			// | return address |
-			// +----------------+
-			// | align space... |     (unused)
-			// +----------------+
-			// |----------------|
-			// || original SP  ||
-			// |----------------|
-			// || argN         ||     (copy)
-			// |----------------|
-			// || arg...       ||     (copy)
-			// |----------------|
-			// || arg7         ||     (copy)
-			// +----------------+
-			// |                |
-			// |  local         |
-			// |                |
-			// |  stack         |
-			// |                |
-			// |                |
-			// +----------------+ <-- aligned address (bottom of stack)
-			//
-			offset = int(stackSize) + (offset - stackArgs.OffsetToFirst)
-			line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", offset, parts[1], match[0])
-		} else {
-			// Base pointer is equal to (initial) stack pointer, so can leave loads untouched
-		}
+		line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", stack.OffsetForGoArg(iarg), parts[1], match[0])
 	}
 
 	return line

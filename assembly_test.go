@@ -16,25 +16,26 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 	arguments, returnValues := []string{}, []string{}
 	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 
-	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
-	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
+	stack := NewStack(epilogue, len(arguments), 0)
 
-	alignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), 7, $96-56
+	lines := writeGoasmPrologue(subroutine, stack, arguments, returnValues)
+	lines = append(lines, writeGoasmEpilogue(subroutine, stack, arguments, returnValues)...)
 
-	MOVQ SP, BP
-	ANDQ $-16, BP
-	MOVQ SP, 88(BP)
-	MOVQ dstStride+48(FP), DI
-	MOVQ DI, 80(BP)
+	alignedWithTable := `TEXT ·_SimdSse2MedianFilterRhomb5x5(SB), $96-56
+
 	MOVQ src+0(FP), DI
 	MOVQ srcStride+8(FP), SI
 	MOVQ width+16(FP), DX
 	MOVQ height+24(FP), CX
 	MOVQ channelCount+32(FP), R8
 	MOVQ dst+40(FP), R9
-	LEAQ LCDATA3<>(SB), BP
+	MOVQ dstStride+48(FP), R10
+	MOVQ SP, BP
 	ADDQ $16, SP
 	ANDQ $-16, SP
+	MOVQ BP, 72(SP)
+	MOVQ R10, 64(SP)
+	LEAQ LCDATA3<>(SB), BP
 
 	MOVQ 72(SP), SP
 	RET`
@@ -48,7 +49,7 @@ func TestAssemblyAlignedWithTableWithStackArgs(t *testing.T) {
 
 	test := "mov	r11, qword ptr [rbp + 16]"
 
-	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, stack)
 
 	dstStrideMov := `mov	r11, qword ptr 64[rsp] /* [rbp + 16] */`
 	if dstStrideMov != result {
@@ -66,10 +67,12 @@ func TestAssemblyUnalignedWithTableWithStackArgs(t *testing.T) {
 	arguments, returnValues := []string{}, []string{}
 	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 
-	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
-	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
+	stack := NewStack(epilogue, len(arguments), 0)
 
-	unalignedWithTable := `TEXT ·_SimdSse2MedianFilterSquare3x3(SB), 7, $8-56
+	lines := writeGoasmPrologue(subroutine, stack, arguments, returnValues)
+	lines = append(lines, writeGoasmEpilogue(subroutine, stack, arguments, returnValues)...)
+
+	unalignedWithTable := `TEXT ·_SimdSse2MedianFilterSquare3x3(SB), $24-56
 
 	MOVQ src+0(FP), DI
 	MOVQ srcStride+8(FP), SI
@@ -77,8 +80,10 @@ func TestAssemblyUnalignedWithTableWithStackArgs(t *testing.T) {
 	MOVQ height+24(FP), CX
 	MOVQ channelCount+32(FP), R8
 	MOVQ dst+40(FP), R9
-	LEAQ LCDATA2<>(SB), BP
+	MOVQ dstStride+48(FP), R10
 	ADDQ $8, SP
+	MOVQ R10, 8(SP)
+	LEAQ LCDATA2<>(SB), BP
 
 	SUBQ $8, SP
 	RET`
@@ -92,9 +97,9 @@ func TestAssemblyUnalignedWithTableWithStackArgs(t *testing.T) {
 
 	test := "mov    rax, qword [rbp + 16]"
 
-	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, stack)
 
-	dstStrideMov := `mov    rax, qword 64[rsp] /* [rbp + 16] */`
+	dstStrideMov := `mov    rax, qword 8[rsp] /* [rbp + 16] */`
 	if dstStrideMov != result {
 		t.Errorf("TestAssemblyUnalignedWithTableWithStackArgs(): \nexpected %s\ngot %s", dstStrideMov, result)
 
@@ -111,10 +116,12 @@ func TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(t *testing.T) 
 	arguments, returnValues := []string{}, []string{}
 	arguments = append(arguments, "src", "srcStride", "width", "height", "channelCount", "dst", "dstStride")
 
-	lines := writeGoasmPrologue(subroutine, arguments, returnValues)
-	lines = append(lines, writeGoasmEpilogue(subroutine, arguments, returnValues)...)
+	stack := NewStack(epilogue, len(arguments), 0)
 
-	unalignedWithTableWithStackZeroSize := `TEXT ·_SimdSse2MedianFilterRhomb3x3(SB), 7, $0-56
+	lines := writeGoasmPrologue(subroutine, stack, arguments, returnValues)
+	lines = append(lines, writeGoasmEpilogue(subroutine, stack, arguments, returnValues)...)
+
+	unalignedWithTableWithStackZeroSize := `TEXT ·_SimdSse2MedianFilterRhomb3x3(SB), $16-56
 
 	MOVQ src+0(FP), DI
 	MOVQ srcStride+8(FP), SI
@@ -122,8 +129,12 @@ func TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(t *testing.T) 
 	MOVQ height+24(FP), CX
 	MOVQ channelCount+32(FP), R8
 	MOVQ dst+40(FP), R9
+	MOVQ dstStride+48(FP), R10
+	ADDQ $8, SP
+	MOVQ R10, 0(SP)
 	LEAQ LCDATA1<>(SB), BP
 
+	SUBQ $8, SP
 	RET`
 
 	for i, l := range lines {
@@ -135,38 +146,15 @@ func TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(t *testing.T) 
 
 	test := "mov    rax, qword [rbp + 16]"
 
-	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, epilogue.getStackpointerDecrement(table, len(arguments)), epilogue.additionalStackSpace(table, len(arguments)), table.isPresent(), epilogue.AlignedStack)
+	result := fixRbpPlusLoad(test, StackArgs{Number: 1, OffsetToFirst: 16}, stack)
 
-	dstStrideMov := `mov    rax, qword 56[rsp] /* [rbp + 16] */`
+	dstStrideMov := `mov    rax, qword 0[rsp] /* [rbp + 16] */`
 	if dstStrideMov != result {
 		t.Errorf("TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(): \nexpected %s\ngot %s", dstStrideMov, result)
 
 	}
 }
 
-func TestRbpPlusLoad(t *testing.T) {
-
-	tests := `mov	r8, qword ptr [rbp + 24]
-	mov	r11, qword ptr [rbp + 16]
-	movd	xmm11, dword ptr [rbp + 32] ## xmm11 = mem[0],zero,zero,zero
-	movd	xmm8, dword ptr [rbp + 40] ## xmm8 = mem[0],zero,zero,zero
-	movd	xmm9, dword ptr [rbp + 48] ## xmm9 = mem[0],zero,zero,zero
-	movd	xmm10, dword ptr [rbp + 56] ## xmm10 = mem[0],zero,zero,zero
-	mov	rdi, qword ptr [rbp + 24]
-	add	r15, qword ptr [rbp + 16]
-	mov	rdi, qword ptr [rbp + 24]
-	add	r15, qword ptr [rbp + 16]`
-
-	stackArgs := StackArgs{OffsetToFirst: 256}
-	for _, test := range strings.Split(tests, "\n") {
-		test, _ = stripComments(test)
-		result := fixRbpPlusLoad(test, stackArgs, 0, 0, true, true)
-
-		if !(strings.Contains(result, `/*`) && strings.Contains(result, `*/`)) {
-			t.Errorf("TestRbpPlusLoad(): \nexpected to find C-style comment\ngot %s", result)
-		}
-	}
-}
 
 func TestStripComments(t *testing.T) {
 

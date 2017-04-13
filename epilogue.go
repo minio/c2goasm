@@ -38,9 +38,9 @@ type Stack struct {
 	untouchedSpace uint // untouched space to prevent overwriting return address for final RET statement
 }
 
-func NewStack(stackSize uint, alignedStack bool, alignValue uint, arguments int) Stack {
+func NewStack(epilogue Epilogue, arguments int, stackSpaceForCalls uint) Stack {
 
-	s := Stack{localSpace: stackSize, alignedStack: alignedStack}
+	s := Stack{localSpace: epilogue.StackSize, alignedStack: epilogue.AlignedStack, freeSpace: stackSpaceForCalls}
 
 	if arguments-len(registers) > 0 {
 		s.goArgCopies = uint(8 * (arguments - len(registers)))
@@ -51,10 +51,10 @@ func NewStack(stackSize uint, alignedStack bool, alignValue uint, arguments int)
 		s.goSavedSP = originalStackPointer
 
 		// We are rounding freeSpace to a multiple of the  alignment value
-		s.freeSpace = (s.freeSpace + alignValue - 1) & ^(alignValue - 1)
+		s.freeSpace = (s.freeSpace + epilogue.AlignValue - 1) & ^(epilogue.AlignValue - 1)
 
 		// Create unused space at the bottom of the stack to guarantee alignment
-		s.untouchedSpace = alignValue
+		s.untouchedSpace = epilogue.AlignValue
 	} else {
 		// Only when we are using no stack whatsoever, do we not need to reserve space to save the return address
 		if s.freeSpace+s.localSpace+s.goArgCopies+s.goSavedSP > 0 {

@@ -23,11 +23,17 @@ var regexpRbpLoadLower = regexp.MustCompile(`\[rbp - ([0-9]+)\]`)
 var regexpStripComments = regexp.MustCompile(`\s*#?#\s.*$`)
 
 // Write the prologue for the subroutine
-func writeGoasmPrologue(sub Subroutine, arguments, returnValues []string) []string {
+func writeGoasmPrologue(sub Subroutine, stack Stack, arguments, returnValues []string) []string {
+
+	//if sub.name == "SimdSse2MedianFilterRhomb3x3" {
+	//	fmt.Println("sub.name", sub.name)
+	//	fmt.Println("sub.epilogue", sub.epilogue)
+	//	fmt.Println("arguments", arguments)
+	//	fmt.Println("returnValues", returnValues)
+	//	fmt.Println("table.Name", sub.table.Name)
+	//}
 
 	var result []string
-
-	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
 
 	// Output definition of subroutine
 	result = append(result, fmt.Sprintf("TEXT ·_%s(SB), $%d-%d", sub.name, stack.GolangLocalStackFrameSize(),
@@ -75,11 +81,9 @@ func writeGoasmPrologue(sub Subroutine, arguments, returnValues []string) []stri
 	return append(result, ``)
 }
 
-func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues []string) ([]string, error) {
+func writeGoasmBody(sub Subroutine, stack Stack, stackArgs StackArgs, arguments, returnValues []string) ([]string, error) {
 
 	var result []string
-
-	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
 
 	for iline, line := range sub.body {
 
@@ -88,7 +92,7 @@ func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues
 
 			// Instead of last line, output go assembly epilogue
 			if iline == sub.epilogue.End - 1 {
-				result = append(result, writeGoasmEpilogue(sub, arguments, returnValues)...)
+				result = append(result, writeGoasmEpilogue(sub, stack, arguments, returnValues)...)
 			}
 			continue
 		}
@@ -107,7 +111,7 @@ func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues
 
 		line, _ = fixLabels(line)
 		line, _, _ = upperCaseJumps(line)
-		line = upperCaseCalls(line)
+		line, _ = upperCaseCalls(line)
 
 		fields := strings.Fields(line)
 		// Test for any non-jmp instruction (lower case mnemonic)
@@ -143,11 +147,9 @@ func writeGoasmBody(sub Subroutine, stackArgs StackArgs, arguments, returnValues
 }
 
 // Write the epilogue for the subroutine
-func writeGoasmEpilogue(sub Subroutine, arguments, returnValues []string) []string {
+func writeGoasmEpilogue(sub Subroutine, stack Stack, arguments, returnValues []string) []string {
 
 	var result []string
-
-	stack := NewStack(sub.epilogue.StackSize, sub.epilogue.AlignedStack, sub.epilogue.AlignValue, len(arguments))
 
 	// Restore the stack pointer
 	if sub.epilogue.AlignedStack {
@@ -175,6 +177,22 @@ func writeGoasmEpilogue(sub Subroutine, arguments, returnValues []string) []stri
 	result = append(result, "    RET")
 
 	return result
+}
+
+func scanBodyForCalls(sub Subroutine) (uint) {
+
+	stackSize := uint(0)
+
+	for _, line := range sub.body {
+
+		_, size := upperCaseCalls(line)
+
+		if stackSize < size {
+			stackSize = size
+		}
+	}
+
+	return stackSize
 }
 
 // Strip comments from assembly lines
@@ -220,7 +238,10 @@ func upperCaseJumps(line string) (string, string, string) {
 }
 
 // Make calls uppercase
-func upperCaseCalls(line string) string {
+func upperCaseCalls(line string) (string, uint) {
+
+	// TODO: Make determination of required stack size more sophisticated
+	stackSize := uint(0)
 
 	// Make 'call' instructions uppercase
 	if match := regexpCall.FindStringSubmatch(line); len(match) > 0 {
@@ -230,17 +251,21 @@ func upperCaseCalls(line string) string {
 		// replace c stdlib functions with equivalents
 		if fname == "_memcpy" || fname == "memcpy@PLT" { // (Procedure Linkage Table)
 			parts[1] = "clib·_memcpy(SB)"
+			stackSize = 64
 		} else if fname == "_memset" || fname == "memset@PLT" { // (Procedure Linkage Table)
 			parts[1] = "clib·_memset(SB)"
+			stackSize = 64
 		} else if fname == "_floor" || fname == "floor@PLT" { // (Procedure Linkage Table)
 			parts[1] = "clib·_floor(SB)"
+			stackSize = 64
 		} else if fname == "___bzero" {
 			parts[1] = "clib·_bzero(SB)"
+			stackSize = 64
 		}
 		line = parts[0] + "CALL " + strings.TrimSpace(parts[1])
 	}
 
-	return line
+	return line, stackSize
 }
 
 func isLower(str string) bool {

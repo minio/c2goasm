@@ -83,11 +83,14 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 			sub.table = table
 		}
 
+		// Create object to get offsets for stack pointer
+		stack := NewStack(sub.epilogue, len(golangArgs), scanBodyForCalls(sub))
+
 		// Write header for subroutine in go assembly
-		result = append(result, writeGoasmPrologue(sub, golangArgs, golangReturns)...)
+		result = append(result, writeGoasmPrologue(sub, stack, golangArgs, golangReturns)...)
 
 		// Write body of code
-		assembly, err := writeGoasmBody(sub, stackArgs, golangArgs, golangReturns)
+		assembly, err := writeGoasmBody(sub, stack, stackArgs, golangArgs, golangReturns)
 		if err != nil {
 			panic(fmt.Sprintf("writeGoasmBody: %v", err))
 		}

@@ -28,58 +28,69 @@ var regexpMov = regexp.MustCompile(`^\s*mov\s*([a-z0-9]+), ([a-z0-9]+)$`)
 var regexpVZeroUpper = regexp.MustCompile(`^\s*vzeroupper\s*$`)
 var regexpReturn = regexp.MustCompile(`^\s*ret\s*$`)
 
-func (e *Epilogue) getFreeSpaceAtBottom() uint {
-	size := uint(returnAddrOnStack) // make sure return address of calling routine is preserved
-	size += 0			// additional space at bottom of stack for CALLs etc.
-	return size
+type Stack struct {
+	alignedStack bool // is this an aligned stack?
+
+	goSavedSP      uint // space to save a copy of the original Stack Pointer as passed in by Go (for aligned stacks)
+	goArgCopies    uint // space used to store copies of golang args not passed in registers (arguments 7 and higher)
+	localSpace     uint // stack space used by C code
+	freeSpace      uint // free stack space used for CALLs
+	untouchedSpace uint // untouched space to prevent overwriting return address for final RET statement
 }
 
-// get (if needed) any additional stack space for aligned stack
-func (e *Epilogue) additionalStackSpace(table Table, arguments int) uint {
-	additionalStackSpace := uint(0)
-	if e.AlignedStack {
-		// create space to restore original stack pointer
-		additionalStackSpace += originalStackPointer
+func NewStack(stackSize uint, alignedStack bool, alignValue uint, arguments int) Stack {
 
-		if table.isPresent() {
-			if arguments > len(registers) {
-				// create space if we need to copy non-register passed arguments from the golang stack
-				additionalStackSpace += getTotalSizeOfArguments(len(registers), arguments-1)
-			}
+	s := Stack{localSpace: stackSize, alignedStack: alignedStack}
+
+	if arguments-len(registers) > 0 {
+		s.goArgCopies = uint(8 * (arguments - len(registers)))
+	}
+
+	if s.alignedStack {
+		// For an aligned stack we need to save the original Stack Pointer as passed in by Go
+		s.goSavedSP = originalStackPointer
+
+		// We are rounding freeSpace to a multiple of the  alignment value
+		s.freeSpace = (s.freeSpace + alignValue - 1) & ^(alignValue - 1)
+
+		// Create unused space at the bottom of the stack to guarantee alignment
+		s.untouchedSpace = alignValue
+	} else {
+		// Only when we are using no stack whatsoever, do we not need to reserve space to save the return address
+		if s.freeSpace+s.localSpace+s.goArgCopies+s.goSavedSP > 0 {
+			s.untouchedSpace = 8
 		}
-
-		// For an aligned stack, round up to next multiple of the alignment size
-		// (guarantee for goasm prologue that ANDQ for BP  has same effect as ANDQ for SP)
-		additionalStackSpace = (additionalStackSpace + e.AlignValue - 1) & ^(e.AlignValue - 1)
 	}
 
-	return additionalStackSpace
+	return s
 }
 
-// get value to decrement stack pointer with
-func (e *Epilogue) getStackpointerDecrement(table Table, arguments int) uint {
-	stack := e.StackSize
-	if e.AlignedStack {
-		stack += e.additionalStackSpace(table, arguments)
-
-		// For an aligned stack, round stack size up to next multiple of the alignment size
-		stack = (stack + e.AlignValue - 1) & ^(e.AlignValue - 1)
-	}
-
-	return stack
+// Get total local stack frame size (for Go) used in TEXT definition
+func (s Stack) GolangLocalStackFrameSize() uint {
+	return s.untouchedSpace + s.freeSpace + s.localSpace + s.goArgCopies + s.goSavedSP
 }
 
-// get overall depth of stack (including rounding off to nearest alignment value)
-func (e *Epilogue) getTotalStackDepth(table Table, arguments int) uint {
+// Get offset to adjust Stack Pointer appropriately for C code
+func (s Stack) StackPointerOffsetForC() uint {
+	return s.untouchedSpace + s.freeSpace
+}
 
-	stack := e.getStackpointerDecrement(table, arguments)
-
-	if e.AlignedStack {
-		// stack value is already a multiple, so will remain a multiple (no need to round up)
-		stack += e.AlignValue
+// Get offset (from C Stack Pointer) for saving original Golang Stack Pointer
+func (s Stack) OffsetForSavedSP() uint {
+	if s.goSavedSP == 0 {
+		panic("There should be space reserved for OffsetForSavedSP")
 	}
+	return s.localSpace + s.goArgCopies
+}
 
-	return stack
+// Get offset (from C Stack Pointer) for copy of Golang arguments 7 and higher
+func (s Stack) OffsetForGoArg(iarg int) uint {
+
+	offset := uint((iarg - len(registers)) * 8)
+	if offset > s.goArgCopies {
+		panic("Offset for higher number argument asked for than reserved")
+	}
+	return s.localSpace + offset
 }
 
 func extractEpilogueInfo(src []string, sliceStart, sliceEnd int) Epilogue {

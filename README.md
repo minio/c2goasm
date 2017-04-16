@@ -97,7 +97,8 @@ And as you may have gathered the amd64.go file needs to be in place in order for
 
 ## Internals
 
-The basic process is to (in the prologue) setup the stack and registers as how the C code expects this to be the case, and upon exiting the subroutine (in the epilogue) to revert back to the golang world and pass any return values back accordingly. In more details:
+The basic process is to (in the prologue) setup the stack and registers as how the C code expects this to be the case, and upon exiting the subroutine (in the epilogue) to revert back to the golang world and pass a return value back if required. In more details:
+- Define assembly subroutine with proper golang decoration in terms of needed stack space and overall size of arguments plus return value. 
 - Function arguments are loaded from the golang stack into registers and prior to starting the C code any arguments beyond 6 are stored in C stack space.
 - Stack space is reserved and setup for the C code. Depending on the C code, the stack pointer maybe aligned on a certain boundary (especially needed for code that takes advantages of SIMD instructions such as AVX etc.).
 - A constants table is generated (if needed) and any `rip`-based references are replaced with proper offsets to where Go will put the table. 
@@ -169,7 +170,7 @@ Also LLVM allows you to tune specific functions via [function attributes](http:/
 
 #### What about GCC support?
 
-For now GCC code will not work out of the box. However there is no reason why GCC should not work fundamentally (PRs are welcome...).
+For now GCC code will not work out of the box. However there is no reason why GCC should not work fundamentally (PRs are welcome).
 
 ## Resources
 

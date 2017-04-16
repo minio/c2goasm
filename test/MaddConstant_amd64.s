@@ -7,17 +7,16 @@ DATA LCDATA1<>+0x010(SB)/8, $0x40c0000040a00000
 DATA LCDATA1<>+0x018(SB)/8, $0x4100000040e00000
 GLOBL LCDATA1<>(SB), 8, $32
 
-TEXT ·_MaddConstant(SB), 7, $0
+TEXT ·_MaddConstant(SB), $0-24
 
-    MOVQ arg1+0(FP), DI
-    MOVQ arg2+8(FP), SI
-    MOVQ arg3+16(FP), DX
+	MOVQ vec1+0(FP), DI
+	MOVQ vec2+8(FP), SI
+	MOVQ result+16(FP), DX
+	LEAQ LCDATA1<>(SB), BP
 
-    LEAQ LCDATA1<>(SB), BP
-
-    LONG $0x0710fcc5             // vmovups    ymm0, [rdi]
-    LONG $0x0e10fcc5             // vmovups    ymm1, [rsi]
-    LONG $0xa87de2c4; WORD $0x004d // vfmadd213ps    ymm1, ymm0, 0[rbp] /* [rip + __ZL1a] */
-    LONG $0x0a11fcc5             // vmovups    [rdx], ymm1
-    VZEROUPPER
-    RET
+	LONG $0x0710fcc5               // vmovups    ymm0, yword [rdi]
+	LONG $0x0e10fcc5               // vmovups    ymm1, yword [rsi]
+	LONG $0xa87de2c4; WORD $0x004d // vfmadd213ps    ymm1, ymm0, yword 0[rbp] /* [rip + LCPI0_0] */
+	LONG $0x0a11fcc5               // vmovups    yword [rdx], ymm1
+	VZEROUPPER
+	RET

@@ -23,17 +23,7 @@ Usage of c2goasm:
   -s	Strip comments
 ```
 
-## Benchmark against cgo
-
-Running `benchmark_test.go` in resp. `test/` and `cgocmp/` gives the following result 
-
-```
-$ benchcmp ../cgocmp/cgo.out c2goasm.out 
-benchmark                      old ns/op     new ns/op     delta
-BenchmarkMultiplyAndAdd-12     383           9.48          -97.52%
-```
-
-## Example
+## A simple example
 
 Here is a simple C function doing an AVX2 intrinsics computation:
 ```
@@ -94,6 +84,16 @@ func MultiplyAndAdd(someObj Object) {
 ```
 
 And as you may have gathered the amd64.go file needs to be in place in order for the arguments names to be derived (and allow `go vet` to succeed).
+
+## Benchmark against cgo
+
+Running `benchmark_test.go` in resp. `test/` and `cgocmp/` gives the following result 
+
+```
+$ benchcmp ../cgocmp/cgo.out c2goasm.out 
+benchmark                      old ns/op     new ns/op     delta
+BenchmarkMultiplyAndAdd-12     383           9.48          -97.52%
+```
 
 ## Internals
 

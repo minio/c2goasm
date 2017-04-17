@@ -11,7 +11,7 @@ $ c2goasm -a /path/to/c-project/build/SimdAvx2Detection.cpp.s SimdAvx2Detection_
 
 You can optionally nicely format the code using [asmfmt](https://github.com/klauspost/asmfmt) by passing in an `-f` flag. 
 
-This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/ermig1979/Simd). However it should also work with other projects and libraries.
+This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/fwessels/go-cv-simd). However it should also work with other projects and libraries.
 
 ## Command line options
 ```
@@ -174,5 +174,6 @@ For now GCC code will not work out of the box. However there is no reason why GC
 
 ## Resources
 
-- https://github.com/golang/go/files/447163/GoFunctionsInAssembly.pdf
-- https://godbolt.org/
+- [Go Function in Assembly](https://github.com/golang/go/files/447163/GoFunctionsInAssembly.pdf)
+- [Compiler Explorer (interactive)](https://go.godbolt.org/)
+- [Stack frame layout on x86-64](http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64)

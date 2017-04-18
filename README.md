@@ -125,6 +125,10 @@ To see the actual command to generate the assembly
 $ make -n SimdAvx2BgraToGray.s
 ```
 
+## Supported golang architectures
+
+For now just the AMD64 architecture is supported. Also ARM64 should work just fine in a similar fashion but support is lacking at the moment.
+
 ## Compatible compilers
 
 The following compilers have been tested:

@@ -186,3 +186,7 @@ For now GCC code will not work out of the box. However there is no reason why GC
 - [Go Function in Assembly](https://github.com/golang/go/files/447163/GoFunctionsInAssembly.pdf)
 - [Compiler Explorer (interactive)](https://go.godbolt.org/)
 - [Stack frame layout on x86-64](http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64)
+
+## License
+
+c2goasm is released under the Apache License v2.0. You can find the complete text in the file LICENSE.

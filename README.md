@@ -11,7 +11,7 @@ $ c2goasm -a /path/to/some/great/c-code.s /path/to/now/great/golang-code_amd64.s
 
 You can optionally nicely format the code using [asmfmt](https://github.com/klauspost/asmfmt) by passing in an `-f` flag. 
 
-This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/fwessels/go-cv-simd). However it should also work with other projects and libraries. Keep in mind though that it is not intented to 'port' a complete C/C++ project in a single action but rather do it on a case-by-case basis per function/source file 9 (and created higher level Go code accordingly).
+This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/fwessels/go-cv-simd). However it should also work with other projects and libraries. Keep in mind though that it is not intented to 'port' a complete C/C++ project in a single action but rather do it on a case-by-case basis per function/source file (and create accompanying high level Go code accordingly to call into the assembly code).
 
 ## Command line options
 ```

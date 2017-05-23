@@ -196,3 +196,7 @@ For now GCC code will not work out of the box. However there is no reason why GC
 ## License
 
 c2goasm is released under the Apache License v2.0. You can find the complete text in the file LICENSE.
+
+## Contributing
+
+Contributions are welcome, please send PRs for any enhancements.

@@ -1,7 +1,7 @@
 //+build !noasm
 //+build !appengine
 
-package gocvsimd
+package c2goasmtest
 
 import "unsafe"
 

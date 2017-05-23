@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package gocvsimd
+package c2goasmtest
 
 import (
 	"unsafe"

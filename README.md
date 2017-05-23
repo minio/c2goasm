@@ -11,7 +11,7 @@ $ c2goasm -a /path/to/some/great/c-code.s /path/to/now/great/golang-code_amd64.s
 
 You can optionally nicely format the code using [asmfmt](https://github.com/klauspost/asmfmt) by passing in an `-f` flag. 
 
-This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/fwessels/go-cv-simd). However it should also work with other projects and libraries. Keep in mind though that it is not intented to 'port' a complete C/C++ project in a single action but rather do it on a case-by-case basis per function/source file (and create accompanying high level Go code accordingly to call into the assembly code).
+This project has been developed as part of developing a Go wrapper around [Simd](https://github.com/fwessels/go-cv-simd). However it should also work with other projects and libraries. Keep in mind though that it is not intented to 'port' a complete C/C++ project in a single action but rather do it on a case-by-case basis per function/source file (and create accompanying high level Go code to call into the assembly code).
 
 ## Command line options
 ```
@@ -87,13 +87,19 @@ And as you may have gathered the amd64.go file needs to be in place in order for
 
 ## Benchmark against cgo
 
-Running `benchmark_test.go` in resp. `test/` and `cgocmp/` gives the following result 
-
+We have run benchmarks of `c2goasm` versus `cgo` for both Go version 1.7.5 and 1.8.1. You can find the `c2goasm` benchmark test in `test/` and the `cgo` test in `cgocmp/` respectively. Here are the results for both versions:
 ```
-$ benchcmp ../cgocmp/cgo.out c2goasm.out 
+$ benchcmp ../cgocmp/cgo-1.7.5.out c2goasm.out 
 benchmark                      old ns/op     new ns/op     delta
-BenchmarkMultiplyAndAdd-12     383           9.48          -97.52%
+BenchmarkMultiplyAndAdd-12     382           10.9          -97.15%
 ```
+```
+$ benchcmp ../cgocmp/cgo-1.8.1.out c2goasm.out 
+benchmark                      old ns/op     new ns/op     delta
+BenchmarkMultiplyAndAdd-12     236           10.9          -95.38%
+```
+
+As you can see Golang 1.8 has made a significant improvement (38.2%) over 1.7.5, but it is still about 20x slower than directly calling into assembly code as wrapped by `c2goasm`.
 
 ## Converted projects
 

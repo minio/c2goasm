@@ -30,11 +30,15 @@ func testName(t *testing.T, fullname, expected string) {
 
 func TestNames(t *testing.T) {
 
+	// C++ name mangling
 	testName(t, "_ZN4Simd4Avx213Yuv444pToBgraEPKhmS2_mS2_mmmPhmh", "SimdAvx2Yuv444pToBgra")
 	testName(t, "_ZN4Simd4Avx213Yuv420pToBgraEPKhmS2_mS2_mmmPhmh", "SimdAvx2Yuv420pToBgra")
 	testName(t, "_ZN4Simd4Avx213Yuv422pToBgraEPKhmS2_mS2_mmmPhmh", "SimdAvx2Yuv422pToBgra")
 	testName(t, "_ZN4Simd4Avx213ReduceGray2x2EPKhmmmPhmmm", "SimdAvx2ReduceGray2x2")
 	testName(t, "_ZN4Simd4Avx216AbsDifferenceSumEPKhmS2_mmmPy", "SimdAvx2AbsDifferenceSum")
+
+	// Plain C style names
+	testName(t, "XORShift128Plus", "XORShift128Plus")
 }
 
 func subroutineEqual(a, b []Subroutine) bool {

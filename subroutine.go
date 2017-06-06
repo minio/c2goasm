@@ -264,8 +264,14 @@ func extractNamePart(part string) (int, string) {
 
 func extractName(name string) string {
 
+	// Only proceed for C++ mangled names
+	if !strings.HasPrefix(name, "_ZN") {
+		return name
+	}
+
 	var parts []string
 
+	// Parse C++ mangled name in the form of '_ZN4Simd4Avx213Yuv444pToBgraEPKhmS2_mS2_mmmPhmh'
 	for index, ch := range name {
 		if unicode.IsDigit(ch) {
 

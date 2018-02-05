@@ -39,14 +39,16 @@ type Global struct {
 	globalLabelLine int
 }
 
+var globlRe = regexp.MustCompile(`^\s*.globl\s+([^\s]+)\s*.*`)
+
 func splitOnGlobals(lines []string) []Global {
 
 	var result []Global
 
 	for index, line := range lines {
-		if strings.Contains(line, ".globl") {
-
-			scrambled := strings.TrimSpace(strings.Split(line, ".globl")[1])
+		if globlRe.MatchString(line) {
+			match := globlRe.FindStringSubmatch(line)
+			scrambled := match[1]
 			name := extractName(scrambled)
 
 			labelLine := findLabel(lines, scrambled)

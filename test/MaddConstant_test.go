@@ -17,7 +17,7 @@ func TestMaddConstant(t *testing.T) {
 	f3 := MaddConstant(f1, f2)
 
 	for i := 0; i < 8; i++ {
-		expected := f1[i]*f2[i]+float32(i+1)
+		expected := f1[i]*f2[i] + float32(i+1)
 		if f3[i] != expected {
 			t.Errorf("TestMaddConstant(): \nexpected %f\ngot      %f", expected, f3[i])
 		}

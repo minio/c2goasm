@@ -83,7 +83,7 @@ func segmentSource(src []string) []Subroutine {
 				newsub := extractSubroutine(lineRet, src, global)
 
 				subroutines = append(subroutines, newsub)
-				
+
 				break
 			}
 		}
@@ -115,10 +115,9 @@ func extractSubroutine(lineRet int, src []string, global Global) Subroutine {
 		bodyEnd += postEpilogueLines
 	}
 
-
 	subroutine := Subroutine{
-		name: global.globalName,
-		body: src[bodyStart:bodyEnd],
+		name:     global.globalName,
+		body:     src[bodyStart:bodyEnd],
 		epilogue: extractEpilogue(src[bodyStart:bodyEnd]),
 	}
 
@@ -128,7 +127,7 @@ func extractSubroutine(lineRet int, src []string, global Global) Subroutine {
 	return subroutine
 }
 
-func (s *Subroutine) removePrologueLines(src []string, bodyStart int, bodyEnd int)  {
+func (s *Subroutine) removePrologueLines(src []string, bodyStart int, bodyEnd int) {
 
 	prologueLines := getPrologueLines(src[bodyStart:bodyEnd], &s.epilogue)
 

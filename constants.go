@@ -82,7 +82,7 @@ func getDualNumbers(line string) (int64, int64) {
 // Sanify check to detect labels with identical offsets
 func sanityCheckLabels(labels []Label) {
 
-	for i := 0; i < len(labels) - 1; i++ {
+	for i := 0; i < len(labels)-1; i++ {
 		if labels[i].Offset == labels[i+1].Offset {
 			panic(fmt.Sprintf("Detected two labels with identical offsets: %v and %v", labels[i], labels[i+1]))
 		}
@@ -132,7 +132,7 @@ func defineTable(constants []string, tableName string) Table {
 			for len(bytes)%align != 0 {
 				bytes = append(bytes, 0)
 			}
-		} else if strings.Contains(line, ".space") || strings.Contains(line, ".zero"){
+		} else if strings.Contains(line, ".space") || strings.Contains(line, ".zero") {
 			length, b := getDualNumbers(line)
 			for i := int64(0); i < length; i++ {
 				bytes = append(bytes, byte(b))
@@ -182,7 +182,7 @@ func getFirstLabelConstants(lines []string) int {
 }
 
 type Const struct {
-	name     string
+	name       string
 	start, end int
 }
 

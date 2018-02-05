@@ -17,8 +17,8 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -50,7 +50,7 @@ func argumentsOnStack(lines []string) StackArgs {
 		}
 	}
 	if offset >= 16 {
-		return StackArgs{OffsetToFirst: 16, Number: 1+int((offset-16)/8)}
+		return StackArgs{OffsetToFirst: 16, Number: 1 + int((offset-16)/8)}
 	}
 	return StackArgs{OffsetToFirst: 0, Number: 0}
 }
@@ -111,11 +111,10 @@ func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string, 
 
 func getTotalSizeOfArguments(argStart, argEnd int) uint {
 	// TODO: Test if correct for non 64-bit arguments
-	return uint((argEnd - argStart + 1)*8)
+	return uint((argEnd - argStart + 1) * 8)
 }
 
 func getTotalSizeOfArgumentsAndReturnValues(argStart, argEnd int, returnValues []string) uint {
 	// TODO: Test if correct for non 64-bit return values
 	return getTotalSizeOfArguments(argStart, argEnd) + uint(len(returnValues)*8)
 }
-

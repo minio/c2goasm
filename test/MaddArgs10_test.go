@@ -31,7 +31,7 @@ func TestMaddArgs10(t *testing.T) {
 	f10 := MaddArgs10(f1, f2, f3, f4, f5, f6, f7, f8, f9)
 
 	for i := 0; i < 8; i++ {
-		expected := (((f1[i]*f2[i] + f3[i])*f4[i] + f5[i])*f6[i] + f7[i])*f8[i] + f9[i]
+		expected := (((f1[i]*f2[i]+f3[i])*f4[i]+f5[i])*f6[i]+f7[i])*f8[i] + f9[i]
 		if f10[i] != expected {
 			t.Errorf("TestMaddArgs10(): \nexpected %f\ngot      %f", expected, f10[i])
 		}

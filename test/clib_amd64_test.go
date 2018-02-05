@@ -17,8 +17,8 @@
 package c2goasmtest
 
 import (
-	"unsafe"
 	"testing"
+	"unsafe"
 )
 
 func testClibFloor32(t *testing.T, fl, expected float32) {
@@ -76,7 +76,7 @@ func TestClibMemcpy(t *testing.T) {
 			t.Errorf("TestClibMemcpy(): \nexpected %v\ngot      %v", unsafe.Pointer(&dst[0]), ptr)
 		}
 
-		i := 0;
+		i := 0
 		for ; i < count; i++ {
 			if dst[i] != src[i] {
 				t.Errorf("TestClibMemcpy(): \nexpected %d\ngot      %d", src[i], dst[i])
@@ -108,7 +108,7 @@ func TestClibMemset(t *testing.T) {
 			t.Errorf("TestClibMemcpy(): \nexpected %v\ngot      %v", unsafe.Pointer(&dst[0]), ptr)
 		}
 
-		i := 0;
+		i := 0
 		for ; i < count; i++ {
 			if dst[i] != byte(count) {
 				t.Errorf("1-TestClibMemcpy(%d): \nexpected %d\ngot      %d", i, count, dst[i])

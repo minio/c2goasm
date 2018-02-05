@@ -171,7 +171,6 @@ func TestAssemblyUnalignedWithTableWithStackArgsWithStackZeroSize(t *testing.T) 
 	}
 }
 
-
 func TestStripComments(t *testing.T) {
 
 	stripped, notskip := stripComments(`	mov     qword ptr [rsp + 144], r9 ## 8-byte Spill`)

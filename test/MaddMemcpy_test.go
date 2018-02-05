@@ -21,11 +21,11 @@ func TestMaddMemcpy(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		expected := float32(0)
 		if i < 6 {
-			expected = f1[i]*f1[i]+f1[i]
+			expected = f1[i]*f1[i] + f1[i]
 		} else if i < 7 {
-			expected = f1[i]*f2[i]+f1[i]
+			expected = f1[i]*f2[i] + f1[i]
 		} else {
-			expected = f1[i]*f2[i]+f3[i]
+			expected = f1[i]*f2[i] + f3[i]
 		}
 		if f4[i] != expected {
 			t.Errorf("TestMaddMemcpy(): \nexpected %f\ngot      %f", expected, f4[i])

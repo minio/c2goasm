@@ -61,9 +61,9 @@ func writeGoasmPrologue(sub Subroutine, stack Stack, arguments, returnValues []s
 		if iarg < len(registers) {
 			// Load initial arguments (up to 6) in corresponding registers
 			result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arg, iarg*8, registers[iarg]))
-		} else if iarg - len(registers) < len(registersAdditional) {
+		} else if iarg-len(registers) < len(registersAdditional) {
 			// Load following arguments into additional registers
-			result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arg, iarg*8, registersAdditional[iarg - len(registers)]))
+			result = append(result, fmt.Sprintf("    MOVQ %s+%d(FP), %s", arg, iarg*8, registersAdditional[iarg-len(registers)]))
 		} else {
 			panic("Trying to pass in too many arguments")
 		}
@@ -85,8 +85,8 @@ func writeGoasmPrologue(sub Subroutine, stack Stack, arguments, returnValues []s
 	}
 
 	// Save Golang arguments beyond 6 onto stack
-	for iarg := len(arguments) - 1; iarg - len(registers) >= 0; iarg-- {
-		result = append(result, fmt.Sprintf("    MOVQ %s, %d(SP)", registersAdditional[iarg - len(registers)], stack.OffsetForGoArg(iarg)))
+	for iarg := len(arguments) - 1; iarg-len(registers) >= 0; iarg-- {
+		result = append(result, fmt.Sprintf("    MOVQ %s, %d(SP)", registersAdditional[iarg-len(registers)], stack.OffsetForGoArg(iarg)))
 	}
 
 	// Setup base pointer for loading constants
@@ -107,7 +107,7 @@ func writeGoasmBody(sub Subroutine, stack Stack, stackArgs StackArgs, arguments,
 		if iline >= sub.epilogue.Start && iline < sub.epilogue.End {
 
 			// Instead of last line, output go assembly epilogue
-			if iline == sub.epilogue.End - 1 {
+			if iline == sub.epilogue.End-1 {
 				result = append(result, writeGoasmEpilogue(sub, stack, arguments, returnValues)...)
 			}
 			continue
@@ -184,7 +184,7 @@ func writeGoasmEpilogue(sub Subroutine, stack Stack, arguments, returnValues []s
 	if len(returnValues) == 1 {
 		// Store return value of subroutine
 		result = append(result, fmt.Sprintf("    MOVQ AX, %s+%d(FP)", returnValues[0],
-			getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)- 8))
+			getTotalSizeOfArgumentsAndReturnValues(0, len(arguments)-1, returnValues)-8))
 	} else if len(returnValues) > 1 {
 		panic(fmt.Sprintf("Fix multiple return values: %s", returnValues))
 	}
@@ -195,7 +195,7 @@ func writeGoasmEpilogue(sub Subroutine, stack Stack, arguments, returnValues []s
 	return result
 }
 
-func scanBodyForCalls(sub Subroutine) (uint) {
+func scanBodyForCalls(sub Subroutine) uint {
 
 	stackSize := uint(0)
 
@@ -370,7 +370,7 @@ func fixRbpPlusLoad(line string, stackArgs StackArgs, stack Stack) string {
 	if match := regexpRbpLoadHigher.FindStringSubmatch(line); len(match) > 1 {
 		offset, _ := strconv.Atoi(match[1])
 		// TODO: Get proper offset for non 64-bit arguments
-		iarg := len(registers) + (offset - stackArgs.OffsetToFirst)/8
+		iarg := len(registers) + (offset-stackArgs.OffsetToFirst)/8
 		parts := strings.SplitN(line, match[0], 2)
 		line = parts[0] + fmt.Sprintf("%d[rsp]%s /* %s */", stack.OffsetForGoArg(iarg), parts[1], match[0])
 	}

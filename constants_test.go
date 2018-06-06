@@ -246,7 +246,7 @@ GLOBL LCTABLE<>(SB), 8, $64`
 .LCPI0_3:
         .quad   -4620693217682128896    # double -0.5
         .section        .rodata.cst4,"aM",@progbits,4
-        .p2align        2
+        .p2align        5, 0x12
 .LCPI0_4:
         .long   1098907648              # float 16`
 
@@ -256,8 +256,10 @@ DATA LCTABLE<>+0x010(SB)/8, $0x4330000000000000
 DATA LCTABLE<>+0x018(SB)/8, $0x4530000000000000
 DATA LCTABLE<>+0x020(SB)/8, $0x3fe0000000000000
 DATA LCTABLE<>+0x028(SB)/8, $0xbfe0000000000000
-DATA LCTABLE<>+0x030(SB)/8, $0x0000000041800000
-GLOBL LCTABLE<>(SB), 8, $56`
+DATA LCTABLE<>+0x030(SB)/8, $0x1212121212121212
+DATA LCTABLE<>+0x038(SB)/8, $0x1212121212121212
+DATA LCTABLE<>+0x040(SB)/8, $0x0000000041800000
+GLOBL LCTABLE<>(SB), 8, $72`
 
 	testConstant(t, constant5, table5)
 

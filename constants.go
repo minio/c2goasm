@@ -127,10 +127,24 @@ func defineTable(constants []string, tableName string) Table {
 			bytes = append(bytes, byte(v>>48))
 			bytes = append(bytes, byte(v>>56))
 		} else if strings.Contains(line, ".align") || strings.Contains(line, ".p2align") {
-			bits := getSingleNumber(line)
+			fields := strings.FieldsFunc(line, func(c rune) bool { return c == ',' || c == ' ' || c == '\t' })
+			if len(fields) <= 1 || 4 <= len(fields) {
+				panic(fmt.Sprintf(".p2align must have 2 or 3 arguments; got %v", fields))
+			}
+			bits, err := strconv.ParseInt(fields[1], 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			padVal := int64(0)
+			if len(fields) > 2 {
+				padVal, err = strconv.ParseInt(fields[2], 0, 64)
+				if err != nil {
+					panic(err)
+				}
+			}
 			align := 1 << uint(bits)
 			for len(bytes)%align != 0 {
-				bytes = append(bytes, 0)
+				bytes = append(bytes, byte(padVal))
 			}
 		} else if strings.Contains(line, ".space") || strings.Contains(line, ".zero") {
 			length, b := getDualNumbers(line)

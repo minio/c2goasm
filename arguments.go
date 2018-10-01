@@ -85,8 +85,10 @@ func getGolangArgs(protoName, goline string) (isFunc bool, args, rets []string, 
 		if match[1] == "_"+protoName {
 
 			args, rets = []string{}, []string{}
-			for _, arg := range strings.Split(match[2], ",") {
-				args = append(args, strings.Fields(arg)[0])
+			if match[2] != "" {
+				for _, arg := range strings.Split(match[2], ",") {
+					args = append(args, strings.Fields(arg)[0])
+				}
 			}
 
 			trailer := strings.TrimSpace(match[3])

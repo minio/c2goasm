@@ -189,9 +189,10 @@ For now GCC code will not work out of the box. However there is no reason why GC
 
 ## Resources
 
+- [A Primer on Go Assembly](https://github.com/teh-cmc/go-internals/blob/master/chapter1_assembly_primer/README.md)
 - [Go Function in Assembly](https://github.com/golang/go/files/447163/GoFunctionsInAssembly.pdf)
-- [Compiler Explorer (interactive)](https://go.godbolt.org/)
 - [Stack frame layout on x86-64](http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64)
+- [Compiler Explorer (interactive)](https://go.godbolt.org/)
 
 ## License
 

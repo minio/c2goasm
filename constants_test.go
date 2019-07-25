@@ -100,7 +100,7 @@ LCPI0_2:
         .short  1868                    ## 0x74c
         .short  4899                    ## 0x1323
         .section        __TEXT,__literal4,4byte_literals
-        .align  2
+        .align  1
 LCPI0_3:
         .long   8192                    ## 0x2000`
 
@@ -126,7 +126,7 @@ GLOBL LCTABLE<>(SB), 8, $104`
 LCPI0_2:
         .quad   4294967297              ## 0x100000001
         .section        __TEXT,__const
-        .align  5
+        .align  32
 LCPI0_1:
         .long   0                       ## 0x0
         .long   2                       ## 0x2

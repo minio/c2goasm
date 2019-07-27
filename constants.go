@@ -143,6 +143,16 @@ func defineTable(constants []string, tableName string) Table {
 				}
 			}
 			align := 1 << uint(bits)
+			if strings.Contains(line, ".align") &&
+				(strings.Contains(strings.ToLower(*targetFlag), "x86") ||
+					strings.Contains(strings.ToLower(*targetFlag), "amd64")) {
+				// For historic reasons, the behavior of .align differs between
+				// architectures. The llvm for x86 alignment is in bytes.
+				// https://reviews.llvm.org/D16549
+				// http://lists.llvm.org/pipermail/llvm-dev/2009-June/022771.html
+				// https://users.elis.ugent.be/~jvcleemp/LLVM-2.4-doxygen/TargetAsmInfo_8h_source.html#l00261
+				align = int(bits)
+			}
 			for len(bytes)%align != 0 {
 				bytes = append(bytes, byte(padVal))
 			}

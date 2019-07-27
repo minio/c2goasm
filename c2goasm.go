@@ -33,6 +33,7 @@ var (
 	stripFlag    = flag.Bool("s", false, "Strip comments")
 	compactFlag  = flag.Bool("c", false, "Compact byte codes")
 	formatFlag   = flag.Bool("f", false, "Format using asmfmt")
+	targetFlag   = flag.String("t", "x86", "Target machine of input code")
 )
 
 // readLines reads a whole file into memory

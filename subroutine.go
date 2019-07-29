@@ -196,7 +196,7 @@ func getMissingLines(src []string, lineRet int, missingLabels map[string]bool) i
 	var iline int
 	// first scan until we've found the missing labels
 	for iline = lineRet; len(missingLabels) > 0 && iline < len(src); iline++ {
-		line := src[iline]
+		line, _ := stripComments(src[iline])
 		_, label := fixLabels(line)
 		if label != "" {
 			if _, ok := missingLabels[label]; ok {
@@ -206,7 +206,7 @@ func getMissingLines(src []string, lineRet int, missingLabels map[string]bool) i
 	}
 	// then scan until we find an (unconditional) JMP
 	for ; iline < len(src); iline++ {
-		line := src[iline]
+		line, _ := stripComments(src[iline])
 		_, jump, _ := upperCaseJumps(line)
 		if jump == "JMP" {
 			break

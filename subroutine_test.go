@@ -473,6 +473,12 @@ __ZL1a:
 	subroutine7 = append(subroutine7, Subroutine{name: "SimdSse2Bgr48pToBgra32", body: srcRetInMiddle[36:291]})
 
 	testSubroutine(t, srcRetInMiddle, subroutine7)
+
+	disabledForTesting = false
+	subroutine8 := []Subroutine{}
+	subroutine8 = append(subroutine8, Subroutine{name: "sample_sum_sse4_2", body: srcLabelHasSpecialComment[11:113]})
+
+	testSubroutine(t, srcLabelHasSpecialComment, subroutine8)
 }
 
 var srcClang = strings.Split(`	.text
@@ -1172,3 +1178,123 @@ jmp	.LBB0_36
 
 .ident	"clang version 3.8.0-2ubuntu4 (tags/RELEASE_380/final)"
 .section	".note.GNU-stack","",@progbits`, "\n")
+
+var srcLabelHasSpecialComment = strings.Split(`	.text
+	.intel_syntax noprefix
+	.file	"sample.c"
+	.globl	sample_sum_sse4_2       # -- Begin function sample_sum_sse4_2
+	.p2align	4, 0x90
+	.type	sample_sum_sse4_2,@function
+sample_sum_sse4_2:                      # @sample_sum_sse4_2
+# %bb.0:
+	push	rbp
+	mov	rbp, rsp
+	and	rsp, -8
+	test	rsi, rsi
+	jle	.LBB0_1
+# %bb.2:
+	lea	rcx, [rdi + 8*rsi]
+	lea	rax, [rdi + 8]
+	cmp	rcx, rax
+	cmova	rax, rcx
+	mov	r9, rdi
+	not	r9
+	add	r9, rax
+	shr	r9, 3
+	add	r9, 1
+	cmp	r9, 4
+	jae	.LBB0_4
+# %bb.3:
+	xor	eax, eax
+	jmp	.LBB0_13
+.LBB0_1:
+	xor	eax, eax
+.LBB0_14:
+	mov	rsp, rbp
+	pop	rbp
+	ret
+.LBB0_4:
+	mov	r8, r9
+	and	r8, -4
+	lea	rsi, [r8 - 4]
+	mov	rdx, rsi
+	shr	rdx, 2
+	add	rdx, 1
+	mov	eax, edx
+	and	eax, 3
+	cmp	rsi, 12
+	jae	.LBB0_6
+# %bb.5:
+	pxor	xmm0, xmm0
+	xor	esi, esi
+	pxor	xmm1, xmm1
+	test	rax, rax
+	jne	.LBB0_9
+	jmp	.LBB0_11
+.LBB0_6:
+	mov	esi, 1
+	sub	rsi, rdx
+	lea	rdx, [rax + rsi]
+	add	rdx, -1
+	pxor	xmm0, xmm0
+	xor	esi, esi
+	pxor	xmm1, xmm1
+	.p2align	4, 0x90
+.LBB0_7:                                # =>This Inner Loop Header: Depth=1
+	movdqu	xmm2, xmmword ptr [rdi + 8*rsi]
+	paddq	xmm2, xmm0
+	movdqu	xmm0, xmmword ptr [rdi + 8*rsi + 16]
+	paddq	xmm0, xmm1
+	movdqu	xmm1, xmmword ptr [rdi + 8*rsi + 32]
+	movdqu	xmm3, xmmword ptr [rdi + 8*rsi + 48]
+	movdqu	xmm4, xmmword ptr [rdi + 8*rsi + 64]
+	paddq	xmm4, xmm1
+	paddq	xmm4, xmm2
+	movdqu	xmm2, xmmword ptr [rdi + 8*rsi + 80]
+	paddq	xmm2, xmm3
+	paddq	xmm2, xmm0
+	movdqu	xmm0, xmmword ptr [rdi + 8*rsi + 96]
+	paddq	xmm0, xmm4
+	movdqu	xmm1, xmmword ptr [rdi + 8*rsi + 112]
+	paddq	xmm1, xmm2
+	add	rsi, 16
+	add	rdx, 4
+	jne	.LBB0_7
+# %bb.8:
+	test	rax, rax
+	je	.LBB0_11
+.LBB0_9:
+	lea	rdx, [rdi + 8*rsi]
+	add	rdx, 16
+	neg	rax
+	.p2align	4, 0x90
+.LBB0_10:                               # =>This Inner Loop Header: Depth=1
+	movdqu	xmm2, xmmword ptr [rdx - 16]
+	paddq	xmm0, xmm2
+	movdqu	xmm2, xmmword ptr [rdx]
+	paddq	xmm1, xmm2
+	add	rdx, 32
+	add	rax, 1
+	jne	.LBB0_10
+.LBB0_11:
+	paddq	xmm0, xmm1
+	pshufd	xmm1, xmm0, 78          # xmm1 = xmm0[2,3,0,1]
+	paddq	xmm1, xmm0
+	movq	rax, xmm1
+	cmp	r9, r8
+	je	.LBB0_14
+# %bb.12:
+	lea	rdi, [rdi + 8*r8]
+	.p2align	4, 0x90
+.LBB0_13:                               # =>This Inner Loop Header: Depth=1
+	add	rax, qword ptr [rdi]
+	add	rdi, 8
+	cmp	rdi, rcx
+	jb	.LBB0_13
+	jmp	.LBB0_14
+.Lfunc_end0:
+	.size	sample_sum_sse4_2, .Lfunc_end0-sample_sum_sse4_2
+                                        # -- End function
+	.section	.rodata.cst16,"aM",@progbits,16
+	.p2align	4               # -- Begin function sample_max_sse4_2
+`, "\n")

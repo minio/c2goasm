@@ -19,7 +19,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -72,7 +71,6 @@ func parseCompanionFile(goCompanion, protoName string) ([]string, []string) {
 			return args, rets
 		}
 	}
-	log.Printf("Failed to find function prototype for %s", protoName)
 	return nil, nil
 }
 

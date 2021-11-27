@@ -88,6 +88,7 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 		golangArgs, golangReturns := parseCompanionFile(goCompanionFile, sub.name)
 		if golangArgs == nil && golangReturns == nil {
 			if *allowUndef {
+				log.Printf("Failed to find function prototype for %s", sub.name)
 				continue
 			}
 			panic(fmt.Sprintf("Failed to find function prototype for %s\n", sub.name))

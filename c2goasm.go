@@ -85,6 +85,9 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 	for isubroutine, sub := range subroutines {
 
 		golangArgs, golangReturns := parseCompanionFile(goCompanionFile, sub.name)
+		if golangArgs == nil && golangReturns == nil {
+			continue
+		}
 		stackArgs := argumentsOnStack(sub.body)
 		if len(golangArgs) > 6 && len(golangArgs)-6 < stackArgs.Number {
 			panic(fmt.Sprintf("Found too few arguments on stack (%d) but needed %d", len(golangArgs)-6, stackArgs.Number))

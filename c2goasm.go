@@ -30,6 +30,7 @@ import (
 
 var (
 	assembleFlag = flag.Bool("a", false, "Immediately invoke asm2plan9s")
+	allowUndef = flag.Bool("u", false, "allow undefined symbols")
 	stripFlag    = flag.Bool("s", false, "Strip comments")
 	compactFlag  = flag.Bool("c", false, "Compact byte codes")
 	formatFlag   = flag.Bool("f", false, "Format using asmfmt")
@@ -86,7 +87,10 @@ func process(assembly []string, goCompanionFile string) ([]string, error) {
 
 		golangArgs, golangReturns := parseCompanionFile(goCompanionFile, sub.name)
 		if golangArgs == nil && golangReturns == nil {
-			continue
+			if *allowUndef {
+				continue
+			}
+			panic(fmt.Sprintf("Failed to find function prototype for %s\n", sub.name))
 		}
 		stackArgs := argumentsOnStack(sub.body)
 		if len(golangArgs) > 6 && len(golangArgs)-6 < stackArgs.Number {

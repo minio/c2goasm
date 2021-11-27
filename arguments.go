@@ -71,8 +71,7 @@ func parseCompanionFile(goCompanion, protoName string) ([]string, []string) {
 			return args, rets
 		}
 	}
-
-	panic(fmt.Sprintf("Failed to find function prototype for %s", protoName))
+	return nil, nil
 }
 
 var regexpFuncAndArgs = regexp.MustCompile(`^\s*func\s+([^\(]*)\(([^\)]*)\)(.*)`)
